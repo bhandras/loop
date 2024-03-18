@@ -39,9 +39,11 @@ func TestSqlStore(t *testing.T) {
 	store := NewPostgresStore(testDb)
 
 	swapPreimage := getRandomPreimage()
+	SwapHash := swapPreimage.Hash()
 
 	// Create a new SwapOut.
 	swapOut := &out.SwapOut{
+		SwapHash:         SwapHash,
 		SwapPreimage:     swapPreimage,
 		State:            fsm.StateType("init"),
 		Amount:           100,

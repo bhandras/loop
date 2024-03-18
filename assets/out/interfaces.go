@@ -85,7 +85,7 @@ type SwapStore interface {
 	// UpdateAssetSwapOutSweepTx updates the sweep tx of a swap out.
 	UpdateAssetSwapOutSweepTx(ctx context.Context,
 		swapHash lntypes.Hash, sweepTxid chainhash.Hash,
-		confHeight int32) error
+		confHeight int32, sweepPkscript []byte) error
 
 	// InsertAssetSwapUpdate inserts a new swap update in the store.
 	InsertAssetSwapUpdate(ctx context.Context,

@@ -46,12 +46,13 @@ SET
         swap_preimage = $2
 WHERE
         asset_swaps.swap_hash = $1;
-        
+
 -- name: UpdateAssetSwapSweepTx :exec
 UPDATE asset_swaps
 SET
         sweep_confirmation_height = $2,
-        sweep_txid = $3
+        sweep_txid = $3,
+        sweep_pkscript = $4
 WHERE
         asset_swaps.swap_hash = $1;
 

@@ -313,14 +313,14 @@ func (o *OutFSM) getHtlcPkscript() ([]byte, error) {
 		return nil, err
 	}
 
-	// Verify that the asset script matches the one predicted.
-	assetScriptkey, _, _, _, err := createOpTrueLeaf()
-	if err != nil {
-		return nil, err
-	}
+	// // Verify that the asset script matches the one predicted.
+	// assetScriptkey, _, _, _, err := createOpTrueLeaf()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	o.Debugf("Asset script key: %x", assetScriptkey.PubKey.SerializeCompressed())
-	o.Debugf("Proof script key: %x", proof.Asset.ScriptKey.PubKey.SerializeCompressed())
+	// o.Debugf("Asset script key: %x", assetScriptkey.PubKey.SerializeCompressed())
+	// o.Debugf("Proof script key: %x", proof.Asset.ScriptKey.PubKey.SerializeCompressed())
 	// if !bytes.Equal(
 	// 	proof.Asset.ScriptKey.PubKey.SerializeCompressed(),
 	// 	assetScriptkey.PubKey.SerializeCompressed(),
@@ -370,31 +370,31 @@ func (o *OutFSM) getHtlcPkscript() ([]byte, error) {
 }
 
 // publishPreimageSweep publishes and logs the preimage sweep transaction.
-func (o *OutFSM) publishPreimageSweep() (*wire.OutPoint, error) {
+func (o *OutFSM) publishPreimageSweep() (*wire.OutPoint, []byte, error) {
 	ctx := o.runCtx
 	scriptKey, internalKey, err := o.cfg.TapdClient.DeriveNewKeys(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Check if we have the proof in memory.
 	htlcProof, err := o.getHtlcProof()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	sweepVpkt, err := o.SwapOut.createSweepVpkt(
 		ctx, htlcProof, scriptKey, internalKey,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	feeRate, err := o.cfg.Wallet.EstimateFeeRate(
 		ctx, defaultHtlcFeeConfTarget,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// We'll now commit the vpkt in the btcpacket.
@@ -403,47 +403,55 @@ func (o *OutFSM) publishPreimageSweep() (*wire.OutPoint, error) {
 			ctx, sweepVpkt, feeRate.FeePerVByte(),
 		)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	witness, err := o.createPreimageWitness(
 		ctx, sweepBtcPacket, htlcProof,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var buf bytes.Buffer
 	err = psbt.WriteTxWitness(&buf, witness)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	sweepBtcPacket.Inputs[0].SighashType = txscript.SigHashDefault
 	sweepBtcPacket.Inputs[0].FinalScriptWitness = buf.Bytes()
 
 	signedBtcPacket, err := o.cfg.Wallet.SignPsbt(ctx, sweepBtcPacket)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	finalizedBtcPacket, _, err := o.cfg.Wallet.FinalizePsbt(
 		ctx, signedBtcPacket, "",
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	pkScript := finalizedBtcPacket.UnsignedTx.TxOut[0].PkScript
+
 	// Now we'll publish and log the transfer.
 	sendResp, err := o.cfg.TapdClient.LogAndPublish(
 		ctx, finalizedBtcPacket, activeAssets, passiveAssets,
 		commitResp,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	sweepAnchor := sendResp.Transfer.Outputs[0].Anchor
 
-	return wire.NewOutPointFromString(sweepAnchor.Outpoint)
+	outPoint, err := wire.NewOutPointFromString(sweepAnchor.Outpoint)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return outPoint, pkScript, nil
 }
 
 // getHtlcProof returns the htlc proof for the swap. If the proof is not

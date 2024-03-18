@@ -340,17 +340,18 @@ func (o *OutFSM) publishSweepTx(
 	_ fsm.EventContext) fsm.EventType {
 
 	// Publish and log the sweep transaction.
-	outpoint, err := o.publishPreimageSweep()
+	outpoint, pkScript, err := o.publishPreimageSweep()
 	if err != nil {
 		return o.HandleError(err)
 	}
 
 	o.SwapOut.SweepOutpoint = outpoint
+	o.SwapOut.SweepPkscript = pkScript
 
 	// We can now save the swap outpoint.
 	err = o.cfg.Store.UpdateAssetSwapOutSweepTx(
 		o.runCtx, o.SwapOut.SwapHash, outpoint.Hash,
-		0,
+		0, pkScript,
 	)
 	if err != nil {
 		return o.HandleError(err)
@@ -376,11 +377,11 @@ func (o *OutFSM) subscribeSweepConf(
 		o.SendEvent(onSweepTxConfirmed, conf)
 	}
 
-	// todo(sputn1ck) correct pkscript
 	err := o.cfg.TxConfSubscriber.SubscribeTxConfirmation(
 		txConfCtx, o.SwapOut.SwapHash,
-		&o.SwapOut.SweepOutpoint.Hash, nil, defaultHtlcConfRequirement,
-		o.SwapOut.InitiationHeight, confCallback,
+		&o.SwapOut.SweepOutpoint.Hash, o.SwapOut.SweepPkscript,
+		defaultHtlcConfRequirement, o.SwapOut.InitiationHeight,
+		confCallback,
 	)
 	if err != nil {
 		return o.HandleError(err)

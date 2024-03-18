@@ -20,6 +20,8 @@ const _ = grpc.SupportPackageIsVersion7
 type AssetsClientClient interface {
 	SwapOut(ctx context.Context, in *SwapOutRequest, opts ...grpc.CallOption) (*SwapOutResponse, error)
 	ListAssetSwaps(ctx context.Context, in *ListAssetSwapsRequest, opts ...grpc.CallOption) (*ListAssetSwapsResponse, error)
+	ClientListAvailableAssets(ctx context.Context, in *ClientListAvailableAssetsRequest, opts ...grpc.CallOption) (*ClientListAvailableAssetsResponse, error)
+	ClientGetAssetSwapOutQuote(ctx context.Context, in *ClientGetAssetSwapOutQuoteRequest, opts ...grpc.CallOption) (*ClientGetAssetSwapOutQuoteResponse, error)
 }
 
 type assetsClientClient struct {
@@ -48,12 +50,32 @@ func (c *assetsClientClient) ListAssetSwaps(ctx context.Context, in *ListAssetSw
 	return out, nil
 }
 
+func (c *assetsClientClient) ClientListAvailableAssets(ctx context.Context, in *ClientListAvailableAssetsRequest, opts ...grpc.CallOption) (*ClientListAvailableAssetsResponse, error) {
+	out := new(ClientListAvailableAssetsResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsClient/ClientListAvailableAssets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assetsClientClient) ClientGetAssetSwapOutQuote(ctx context.Context, in *ClientGetAssetSwapOutQuoteRequest, opts ...grpc.CallOption) (*ClientGetAssetSwapOutQuoteResponse, error) {
+	out := new(ClientGetAssetSwapOutQuoteResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsClient/ClientGetAssetSwapOutQuote", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AssetsClientServer is the server API for AssetsClient service.
 // All implementations must embed UnimplementedAssetsClientServer
 // for forward compatibility
 type AssetsClientServer interface {
 	SwapOut(context.Context, *SwapOutRequest) (*SwapOutResponse, error)
 	ListAssetSwaps(context.Context, *ListAssetSwapsRequest) (*ListAssetSwapsResponse, error)
+	ClientListAvailableAssets(context.Context, *ClientListAvailableAssetsRequest) (*ClientListAvailableAssetsResponse, error)
+	ClientGetAssetSwapOutQuote(context.Context, *ClientGetAssetSwapOutQuoteRequest) (*ClientGetAssetSwapOutQuoteResponse, error)
 	mustEmbedUnimplementedAssetsClientServer()
 }
 
@@ -66,6 +88,12 @@ func (UnimplementedAssetsClientServer) SwapOut(context.Context, *SwapOutRequest)
 }
 func (UnimplementedAssetsClientServer) ListAssetSwaps(context.Context, *ListAssetSwapsRequest) (*ListAssetSwapsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAssetSwaps not implemented")
+}
+func (UnimplementedAssetsClientServer) ClientListAvailableAssets(context.Context, *ClientListAvailableAssetsRequest) (*ClientListAvailableAssetsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClientListAvailableAssets not implemented")
+}
+func (UnimplementedAssetsClientServer) ClientGetAssetSwapOutQuote(context.Context, *ClientGetAssetSwapOutQuoteRequest) (*ClientGetAssetSwapOutQuoteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClientGetAssetSwapOutQuote not implemented")
 }
 func (UnimplementedAssetsClientServer) mustEmbedUnimplementedAssetsClientServer() {}
 
@@ -116,6 +144,42 @@ func _AssetsClient_ListAssetSwaps_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AssetsClient_ClientListAvailableAssets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClientListAvailableAssetsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsClientServer).ClientListAvailableAssets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsClient/ClientListAvailableAssets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsClientServer).ClientListAvailableAssets(ctx, req.(*ClientListAvailableAssetsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssetsClient_ClientGetAssetSwapOutQuote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClientGetAssetSwapOutQuoteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsClientServer).ClientGetAssetSwapOutQuote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsClient/ClientGetAssetSwapOutQuote",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsClientServer).ClientGetAssetSwapOutQuote(ctx, req.(*ClientGetAssetSwapOutQuoteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AssetsClient_ServiceDesc is the grpc.ServiceDesc for AssetsClient service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -130,6 +194,14 @@ var AssetsClient_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAssetSwaps",
 			Handler:    _AssetsClient_ListAssetSwaps_Handler,
+		},
+		{
+			MethodName: "ClientListAvailableAssets",
+			Handler:    _AssetsClient_ClientListAvailableAssets_Handler,
+		},
+		{
+			MethodName: "ClientGetAssetSwapOutQuote",
+			Handler:    _AssetsClient_ClientGetAssetSwapOutQuote_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

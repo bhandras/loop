@@ -71,6 +71,9 @@ type SwapOut struct {
 	// confirmed.
 	SweepConfirmationHeight uint32
 
+	// SweepPkscript is the pkscript of the sweep transaction.
+	SweepPkscript []byte
+
 	// RawHtlcProof is the raw htlc proof that we need to send to the
 	// receiver. We only keep this in the OutFSM struct as we don't want
 	// to save it in the store.

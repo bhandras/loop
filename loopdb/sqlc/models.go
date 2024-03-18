@@ -32,6 +32,7 @@ type AssetSwap struct {
 	HtlcVout                int32
 	SweepTxid               []byte
 	SweepConfirmationHeight int32
+	SweepPkscript           []byte
 }
 
 type AssetSwapsUpdate struct {

@@ -49,7 +49,9 @@ CREATE TABLE IF NOT EXISTS asset_swaps (
         sweep_txid BLOB,
 
         -- sweep_confirmation_height is the height at which the swap was swept.
-        sweep_confirmation_height INTEGER NOT NULL DEFAULT(0)
+        sweep_confirmation_height INTEGER NOT NULL DEFAULT(0),
+
+        sweep_pkscript BLOB
 );
 
 

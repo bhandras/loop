@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/urfave/cli"
 )
@@ -19,7 +22,7 @@ var assetsCommands = cli.Command{
 	Subcommands: []cli.Command{
 		assetsOutCommand,
 		listOutCommand,
-		// buyOutCommand,
+		listAvailableAssetsComand,
 	},
 }
 var (
@@ -43,22 +46,17 @@ var (
 		},
 		Action: assetSwapOut,
 	}
-	// buyOutCommand = cli.Command{
-	// 	Name:      "buy",
-	// 	ShortName: "b",
-	// 	Usage:     "buy asset output",
-	// 	ArgsUsage: "",
-	// 	Description: `
-	// 	List all reservations.
-	// `,
-	// 	Flags: []cli.Flag{
-	// 		cli.StringFlag{
-	// 			Name:  "swap_hash",
-	// 			Usage: "swap hash",
-	// 		},
-	// 	},
-	// 	Action: buyOut,
-	// }
+	listAvailableAssetsComand = cli.Command{
+		Name:      "available",
+		ShortName: "a",
+		Usage:     "list available assets",
+		ArgsUsage: "",
+		Description: `
+		List available assets from the loop server
+	`,
+
+		Action: listAvailable,
+	}
 	listOutCommand = cli.Command{
 		Name:      "list",
 		ShortName: "l",
@@ -97,6 +95,9 @@ func assetSwapOut(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	if amt <= 0 {
+		return fmt.Errorf("amount must be greater than zero")
+	}
 
 	assetId, err := hex.DecodeString(ctx.String("asset_id"))
 	if err != nil {
@@ -105,6 +106,56 @@ func assetSwapOut(ctx *cli.Context) error {
 
 	if len(assetId) != 32 {
 		return fmt.Errorf("invalid asset id")
+	}
+
+	// First we'll list the available assets.
+	assets, err := client.ClientListAvailableAssets(
+		context.Background(),
+		&looprpc.ClientListAvailableAssetsRequest{},
+	)
+	if err != nil {
+		return err
+	}
+
+	// We now extract the asset name from the list of available assets.
+	var assetName string
+	for _, asset := range assets.AvailableAssets {
+		if bytes.Equal(asset.AssetId, assetId) {
+			assetName = asset.Name
+			break
+		}
+	}
+	if assetName == "" {
+		return fmt.Errorf("asset not found")
+	}
+
+	// First we'll quote the swap out to get the current fee and rate.
+	quote, err := client.ClientGetAssetSwapOutQuote(
+		context.Background(),
+		&looprpc.ClientGetAssetSwapOutQuoteRequest{
+			Amt:   uint64(amt),
+			Asset: assetId,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	totalSats := btcutil.Amount(amt * btcutil.Amount(quote.SatsPerUnit)).MulF64(float64(1) + quote.SwapFee)
+
+	fmt.Printf(satAmtFmt, "Fixed prepay cost:", quote.PrepayAmt)
+	fmt.Printf(bpsFmt, "Swap fee:", int64(quote.SwapFee*10000))
+	fmt.Printf(satAmtFmt, "Sats per unit:", quote.SatsPerUnit)
+	fmt.Printf(satAmtFmt, "Swap Offchain payment:", totalSats)
+	fmt.Printf(satAmtFmt, "Total Send off-chain:", totalSats+btcutil.Amount(quote.PrepayAmt))
+	fmt.Printf(assetFmt, "Receive assets on-chain:", int64(amt), assetName)
+
+	fmt.Println("CONTINUE SWAP? (y/n): ")
+
+	var answer string
+	fmt.Scanln(&answer)
+	if answer != "y" {
+		return errors.New("swap canceled")
 	}
 
 	res, err := client.SwapOut(
@@ -122,36 +173,25 @@ func assetSwapOut(ctx *cli.Context) error {
 	return nil
 }
 
-// func buyOut(ctx *cli.Context) error {
-// 	// First set up the swap client itself.
-// 	client, cleanup, err := getAssetsClient(ctx)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer cleanup()
+func listAvailable(ctx *cli.Context) error {
+	// First set up the swap client itself.
+	client, cleanup, err := getAssetsClient(ctx)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
 
-// 	swapHash, err := hex.DecodeString(ctx.String("swap_hash"))
-// 	if err != nil {
-// 		return err
-// 	}
+	res, err := client.ClientListAvailableAssets(
+		context.Background(),
+		&looprpc.ClientListAvailableAssetsRequest{},
+	)
+	if err != nil {
+		return err
+	}
 
-// 	if len(swapHash) != 32 {
-// 		return fmt.Errorf("invalid asset id")
-// 	}
-
-// 	res, err := client.BuyOutput(
-// 		context.Background(),
-// 		&looprpc.BuyOutputRequest{
-// 			SwapHash: swapHash,
-// 		},
-// 	)
-// 	if err != nil {
-// 		return err
-// 	}
-
-//		printRespJSON(res)
-//		return nil
-//	}
+	printRespJSON(res)
+	return nil
+}
 func listOut(ctx *cli.Context) error {
 	// First set up the swap client itself.
 	client, cleanup, err := getAssetsClient(ctx)

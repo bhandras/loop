@@ -18,6 +18,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AssetsSwapServerClient interface {
+	// QuoteAssetLoopOut requests a quote for an asset loop out swap from the
+	// server.
+	QuoteAssetLoopOut(ctx context.Context, in *QuoteAssetLoopOutRequest, opts ...grpc.CallOption) (*QuoteAssetLoopOutResponse, error)
+	// ListAvailableAssets returns the list of assets that the server supports.
+	ListAvailableAssets(ctx context.Context, in *ListAvailableAssetsRequest, opts ...grpc.CallOption) (*ListAvailableAssetsResponse, error)
 	// RequestAssetLoopOut requests an asset loop out swap from the server.
 	RequestAssetLoopOut(ctx context.Context, in *RequestAssetLoopOutRequest, opts ...grpc.CallOption) (*RequestAssetLoopOutResponse, error)
 	// PollAssetLoopOutProof requests the server to poll for the proof of the
@@ -36,6 +41,24 @@ type assetsSwapServerClient struct {
 
 func NewAssetsSwapServerClient(cc grpc.ClientConnInterface) AssetsSwapServerClient {
 	return &assetsSwapServerClient{cc}
+}
+
+func (c *assetsSwapServerClient) QuoteAssetLoopOut(ctx context.Context, in *QuoteAssetLoopOutRequest, opts ...grpc.CallOption) (*QuoteAssetLoopOutResponse, error) {
+	out := new(QuoteAssetLoopOutResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsSwapServer/QuoteAssetLoopOut", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assetsSwapServerClient) ListAvailableAssets(ctx context.Context, in *ListAvailableAssetsRequest, opts ...grpc.CallOption) (*ListAvailableAssetsResponse, error) {
+	out := new(ListAvailableAssetsResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsSwapServer/ListAvailableAssets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *assetsSwapServerClient) RequestAssetLoopOut(ctx context.Context, in *RequestAssetLoopOutRequest, opts ...grpc.CallOption) (*RequestAssetLoopOutResponse, error) {
@@ -78,6 +101,11 @@ func (c *assetsSwapServerClient) RequestMusig2Sweep(ctx context.Context, in *Req
 // All implementations must embed UnimplementedAssetsSwapServerServer
 // for forward compatibility
 type AssetsSwapServerServer interface {
+	// QuoteAssetLoopOut requests a quote for an asset loop out swap from the
+	// server.
+	QuoteAssetLoopOut(context.Context, *QuoteAssetLoopOutRequest) (*QuoteAssetLoopOutResponse, error)
+	// ListAvailableAssets returns the list of assets that the server supports.
+	ListAvailableAssets(context.Context, *ListAvailableAssetsRequest) (*ListAvailableAssetsResponse, error)
 	// RequestAssetLoopOut requests an asset loop out swap from the server.
 	RequestAssetLoopOut(context.Context, *RequestAssetLoopOutRequest) (*RequestAssetLoopOutResponse, error)
 	// PollAssetLoopOutProof requests the server to poll for the proof of the
@@ -95,6 +123,12 @@ type AssetsSwapServerServer interface {
 type UnimplementedAssetsSwapServerServer struct {
 }
 
+func (UnimplementedAssetsSwapServerServer) QuoteAssetLoopOut(context.Context, *QuoteAssetLoopOutRequest) (*QuoteAssetLoopOutResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QuoteAssetLoopOut not implemented")
+}
+func (UnimplementedAssetsSwapServerServer) ListAvailableAssets(context.Context, *ListAvailableAssetsRequest) (*ListAvailableAssetsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAvailableAssets not implemented")
+}
 func (UnimplementedAssetsSwapServerServer) RequestAssetLoopOut(context.Context, *RequestAssetLoopOutRequest) (*RequestAssetLoopOutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestAssetLoopOut not implemented")
 }
@@ -118,6 +152,42 @@ type UnsafeAssetsSwapServerServer interface {
 
 func RegisterAssetsSwapServerServer(s grpc.ServiceRegistrar, srv AssetsSwapServerServer) {
 	s.RegisterService(&AssetsSwapServer_ServiceDesc, srv)
+}
+
+func _AssetsSwapServer_QuoteAssetLoopOut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuoteAssetLoopOutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsSwapServerServer).QuoteAssetLoopOut(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsSwapServer/QuoteAssetLoopOut",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsSwapServerServer).QuoteAssetLoopOut(ctx, req.(*QuoteAssetLoopOutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssetsSwapServer_ListAvailableAssets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAvailableAssetsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsSwapServerServer).ListAvailableAssets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsSwapServer/ListAvailableAssets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsSwapServerServer).ListAvailableAssets(ctx, req.(*ListAvailableAssetsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AssetsSwapServer_RequestAssetLoopOut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -199,6 +269,14 @@ var AssetsSwapServer_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "looprpc.AssetsSwapServer",
 	HandlerType: (*AssetsSwapServerServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "QuoteAssetLoopOut",
+			Handler:    _AssetsSwapServer_QuoteAssetLoopOut_Handler,
+		},
+		{
+			MethodName: "ListAvailableAssets",
+			Handler:    _AssetsSwapServer_ListAvailableAssets_Handler,
+		},
 		{
 			MethodName: "RequestAssetLoopOut",
 			Handler:    _AssetsSwapServer_RequestAssetLoopOut_Handler,

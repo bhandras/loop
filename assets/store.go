@@ -137,7 +137,7 @@ func (p *PostgresStore) UpdateAssetSwapOutPreimage(ctx context.Context,
 // database.
 func (p *PostgresStore) UpdateAssetSwapOutSweepTx(ctx context.Context,
 	swapHash lntypes.Hash, sweepTxid chainhash.Hash, confHeight int32,
-) error {
+	sweepPkscript []byte) error {
 
 	return p.queries.ExecTx(
 		ctx, &loopdb.SqliteTxOptions{}, func(q *sqlc.Queries) error {
@@ -146,6 +146,7 @@ func (p *PostgresStore) UpdateAssetSwapOutSweepTx(ctx context.Context,
 					SwapHash:                swapHash[:],
 					SweepTxid:               sweepTxid[:],
 					SweepConfirmationHeight: confHeight,
+					SweepPkscript:           sweepPkscript,
 				})
 		},
 	)
@@ -286,6 +287,7 @@ func newSwapOutFromDB(assetSwap sqlc.AssetSwap,
 		HtlcConfirmationHeight:  uint32(assetSwap.HtlcConfirmationHeight),
 		SweepOutpoint:           sweepOutpoint,
 		SweepConfirmationHeight: uint32(assetSwap.SweepConfirmationHeight),
+		SweepPkscript:           assetSwap.SweepPkscript,
 		RawHtlcProof:            assetOutSwap.RawProofFile,
 	}, nil
 }

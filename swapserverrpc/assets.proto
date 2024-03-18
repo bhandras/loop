@@ -9,6 +9,15 @@ package looprpc;
 option go_package = "github.com/lightninglabs/loop/swapserverrpc";
 
 service AssetsSwapServer {
+    // QuoteAssetLoopOut requests a quote for an asset loop out swap from the
+    // server.
+    rpc QuoteAssetLoopOut (QuoteAssetLoopOutRequest)
+        returns (QuoteAssetLoopOutResponse);
+
+    // ListAvailableAssets returns the list of assets that the server supports.
+    rpc ListAvailableAssets (ListAvailableAssetsRequest)
+        returns (ListAvailableAssetsResponse);
+
     // RequestAssetLoopOut requests an asset loop out swap from the server.
     rpc RequestAssetLoopOut (RequestAssetLoopOutRequest)
         returns (RequestAssetLoopOutResponse);
@@ -26,6 +35,38 @@ service AssetsSwapServer {
     // RequestMusig2Sweep requests a musig2 sweep from the server.
     rpc RequestMusig2Sweep (RequestMusig2SweepRequest)
         returns (RequestMusig2SweepResponse);
+}
+
+message QuoteAssetLoopOutRequest {
+    // amount is the amount of the asset to loop out.
+    uint64 amount = 1;
+
+    // asset is the asset to loop out.
+    bytes asset = 2;
+}
+
+message QuoteAssetLoopOutResponse {
+    // fixed_prepay_amt is the fixed prepay amount of the swap.
+    uint64 fixed_prepay_amt = 1;
+
+    // swap_fee_rate is the fee rate that is added to the swap invoice.
+    double swap_fee_rate = 2;
+
+    // current_sats_per_asset_unit is the sats per asset unit of the swap.
+    uint64 current_sats_per_asset_unit = 3;
+}
+
+message ListAvailableAssetsRequest {
+}
+
+message ListAvailableAssetsResponse {
+    // assets is the list of assets that the server supports.
+    repeated AssetInfo assets = 1;
+}
+
+message AssetInfo {
+    bytes asset_id = 1;
+    uint64 current_sats_per_asset_unit = 2;
 }
 
 message RequestAssetLoopOutRequest {

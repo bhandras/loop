@@ -76,7 +76,7 @@ func (q *Queries) CreateAssetSwap(ctx context.Context, arg CreateAssetSwapParams
 
 const getAllAssetOutSwaps = `-- name: GetAllAssetOutSwaps :many
 SELECT DISTINCT
-    asw.id, asw.swap_hash, asw.swap_preimage, asw.asset_id, asw.amt, asw.sender_pubkey, asw.receiver_pubkey, asw.csv_expiry, asw.server_key_family, asw.server_key_index, asw.initiation_height, asw.created_time, asw.htlc_confirmation_height, asw.htlc_txid, asw.htlc_vout, asw.sweep_txid, asw.sweep_confirmation_height,
+    asw.id, asw.swap_hash, asw.swap_preimage, asw.asset_id, asw.amt, asw.sender_pubkey, asw.receiver_pubkey, asw.csv_expiry, asw.server_key_family, asw.server_key_index, asw.initiation_height, asw.created_time, asw.htlc_confirmation_height, asw.htlc_txid, asw.htlc_vout, asw.sweep_txid, asw.sweep_confirmation_height, asw.sweep_pkscript,
     aos.swap_hash, aos.raw_proof_file,
     asu.update_state
 FROM
@@ -127,6 +127,7 @@ func (q *Queries) GetAllAssetOutSwaps(ctx context.Context) ([]GetAllAssetOutSwap
 			&i.AssetSwap.HtlcVout,
 			&i.AssetSwap.SweepTxid,
 			&i.AssetSwap.SweepConfirmationHeight,
+			&i.AssetSwap.SweepPkscript,
 			&i.AssetOutSwap.SwapHash,
 			&i.AssetOutSwap.RawProofFile,
 			&i.UpdateState,
@@ -146,7 +147,7 @@ func (q *Queries) GetAllAssetOutSwaps(ctx context.Context) ([]GetAllAssetOutSwap
 
 const getAssetOutSwap = `-- name: GetAssetOutSwap :one
 SELECT DISTINCT
-    asw.id, asw.swap_hash, asw.swap_preimage, asw.asset_id, asw.amt, asw.sender_pubkey, asw.receiver_pubkey, asw.csv_expiry, asw.server_key_family, asw.server_key_index, asw.initiation_height, asw.created_time, asw.htlc_confirmation_height, asw.htlc_txid, asw.htlc_vout, asw.sweep_txid, asw.sweep_confirmation_height,
+    asw.id, asw.swap_hash, asw.swap_preimage, asw.asset_id, asw.amt, asw.sender_pubkey, asw.receiver_pubkey, asw.csv_expiry, asw.server_key_family, asw.server_key_index, asw.initiation_height, asw.created_time, asw.htlc_confirmation_height, asw.htlc_txid, asw.htlc_vout, asw.sweep_txid, asw.sweep_confirmation_height, asw.sweep_pkscript,
     aos.swap_hash, aos.raw_proof_file,
     asu.update_state
 FROM
@@ -191,6 +192,7 @@ func (q *Queries) GetAssetOutSwap(ctx context.Context, swapHash []byte) (GetAsse
 		&i.AssetSwap.HtlcVout,
 		&i.AssetSwap.SweepTxid,
 		&i.AssetSwap.SweepConfirmationHeight,
+		&i.AssetSwap.SweepPkscript,
 		&i.AssetOutSwap.SwapHash,
 		&i.AssetOutSwap.RawProofFile,
 		&i.UpdateState,
@@ -288,7 +290,8 @@ const updateAssetSwapSweepTx = `-- name: UpdateAssetSwapSweepTx :exec
 UPDATE asset_swaps
 SET
         sweep_confirmation_height = $2,
-        sweep_txid = $3
+        sweep_txid = $3,
+        sweep_pkscript = $4
 WHERE
         asset_swaps.swap_hash = $1
 `
@@ -297,9 +300,15 @@ type UpdateAssetSwapSweepTxParams struct {
 	SwapHash                []byte
 	SweepConfirmationHeight int32
 	SweepTxid               []byte
+	SweepPkscript           []byte
 }
 
 func (q *Queries) UpdateAssetSwapSweepTx(ctx context.Context, arg UpdateAssetSwapSweepTxParams) error {
-	_, err := q.db.ExecContext(ctx, updateAssetSwapSweepTx, arg.SwapHash, arg.SweepConfirmationHeight, arg.SweepTxid)
+	_, err := q.db.ExecContext(ctx, updateAssetSwapSweepTx,
+		arg.SwapHash,
+		arg.SweepConfirmationHeight,
+		arg.SweepTxid,
+		arg.SweepPkscript,
+	)
 	return err
 }
