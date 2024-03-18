@@ -2,7 +2,6 @@ package assets
 
 import (
 	"github.com/btcsuite/btclog"
-	"github.com/lightninglabs/loop/assets/out"
 	"github.com/lightningnetwork/lnd/build"
 )
 
@@ -24,7 +23,4 @@ func init() {
 // btclog.
 func UseLogger(logger btclog.Logger) {
 	log = logger
-
-	// Use the same logger for the out package.
-	out.UseLogger(logger)
 }

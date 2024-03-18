@@ -1,4 +1,4 @@
-package out
+package assets
 
 import (
 	"github.com/btcsuite/btcd/btcec/v2"

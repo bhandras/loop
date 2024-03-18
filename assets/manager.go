@@ -7,7 +7,6 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lndclient"
-	"github.com/lightninglabs/loop/assets/out"
 	"github.com/lightninglabs/loop/fsm"
 	loop_rpc "github.com/lightninglabs/loop/swapserverrpc"
 	"github.com/lightninglabs/loop/utils"
@@ -45,7 +44,7 @@ type AssetsSwapManager struct {
 
 	blockHeight    int32
 	runCtx         context.Context
-	activeSwapOuts map[lntypes.Hash]*out.OutFSM
+	activeSwapOuts map[lntypes.Hash]*OutFSM
 
 	sync.Mutex
 }
@@ -54,7 +53,7 @@ func NewAssetSwapServer(config *Config) *AssetsSwapManager {
 	return &AssetsSwapManager{
 		cfg: config,
 
-		activeSwapOuts: make(map[lntypes.Hash]*out.OutFSM),
+		activeSwapOuts: make(map[lntypes.Hash]*OutFSM),
 	}
 }
 
@@ -113,14 +112,14 @@ func (m *AssetsSwapManager) Run(ctx context.Context, blockHeight int32) error {
 }
 
 func (m *AssetsSwapManager) NewSwapOut(ctx context.Context,
-	amt btcutil.Amount, asset []byte) (*out.OutFSM, error) {
+	amt btcutil.Amount, asset []byte) (*OutFSM, error) {
 
 	// Create a new out fsm.
-	outFSM := out.NewOutFSM(m.runCtx, m.getFSMOutConfig())
+	outFSM := NewOutFSM(m.runCtx, m.getFSMOutConfig())
 
 	// Send the initial event to the fsm.
 	err := outFSM.SendEvent(
-		out.OnRequestAssetOut, &out.InitSwapOutContext{
+		OnRequestAssetOut, &InitSwapOutContext{
 			Amount:  amt,
 			AssetId: asset,
 		},
@@ -135,7 +134,7 @@ func (m *AssetsSwapManager) NewSwapOut(ctx context.Context,
 
 	// Wait for the fsm to be in the state we expect.
 	err = outFSM.DefaultObserver.WaitForState(
-		ctx, time.Second*15, out.PayPrepay,
+		ctx, time.Second*15, PayPrepay,
 		fsm.WithAbortEarlyOnErrorOption(),
 	)
 	if err != nil {
@@ -162,7 +161,7 @@ func (m *AssetsSwapManager) recoverSwapOuts(ctx context.Context) error {
 		log.Debugf("Recovering asset out %v with state %v",
 			swapOut.SwapHash, swapOut.State)
 
-		swapOutFSM := out.NewOutFSMFromSwap(
+		swapOutFSM := NewOutFSMFromSwap(
 			ctx, m.getFSMOutConfig(), swapOut,
 		)
 
@@ -173,7 +172,7 @@ func (m *AssetsSwapManager) recoverSwapOuts(ctx context.Context) error {
 		// As SendEvent can block, we'll start a goroutine to process
 		// the event.
 		go func() {
-			err := swapOutFSM.SendEvent(out.OnRecover, nil)
+			err := swapOutFSM.SendEvent(OnRecover, nil)
 			if err != nil {
 				log.Errorf("FSM %v Error sending recover "+
 					"event %v, state: %v",
@@ -187,8 +186,8 @@ func (m *AssetsSwapManager) recoverSwapOuts(ctx context.Context) error {
 }
 
 // getFSMOutConfig returns a fsmconfig from the manager.
-func (m *AssetsSwapManager) getFSMOutConfig() *out.FSMConfig {
-	return &out.FSMConfig{
+func (m *AssetsSwapManager) getFSMOutConfig() *FSMConfig {
+	return &FSMConfig{
 		TapdClient:            m.cfg.AssetClient,
 		AssetClient:           m.cfg.ServerClient,
 		BlockHeightSubscriber: m.expiryManager,
@@ -202,7 +201,7 @@ func (m *AssetsSwapManager) getFSMOutConfig() *out.FSMConfig {
 	}
 }
 
-func (m *AssetsSwapManager) ListSwapOutoutputs(ctx context.Context) ([]*out.SwapOut,
+func (m *AssetsSwapManager) ListSwapOutoutputs(ctx context.Context) ([]*SwapOut,
 	error) {
 
 	return m.cfg.Store.GetAllAssetOuts(ctx)

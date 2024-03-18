@@ -9,7 +9,6 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/lightninglabs/loop/assets/out"
 	"github.com/lightninglabs/loop/fsm"
 	"github.com/lightninglabs/loop/loopdb"
 	"github.com/lightningnetwork/lnd/keychain"
@@ -42,7 +41,7 @@ func TestSqlStore(t *testing.T) {
 	SwapHash := swapPreimage.Hash()
 
 	// Create a new SwapOut.
-	swapOut := &out.SwapOut{
+	swapOut := &SwapOut{
 		SwapHash:         SwapHash,
 		SwapPreimage:     swapPreimage,
 		State:            fsm.StateType("init"),
@@ -92,7 +91,7 @@ func TestSqlStore(t *testing.T) {
 
 	// Update the swap out state to a finished state.
 	err = store.InsertAssetSwapUpdate(
-		ctxb, SwapHash, fsm.StateType(out.FinishedStates()[0]),
+		ctxb, SwapHash, fsm.StateType(FinishedStates()[0]),
 	)
 	require.NoError(t, err)
 

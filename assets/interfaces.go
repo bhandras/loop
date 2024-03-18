@@ -1,4 +1,4 @@
-package out
+package assets
 
 import (
 	"context"
@@ -29,14 +29,12 @@ const (
 	defaultHtlcFeeConfTarget   = 3
 	defaultHtlcConfRequirement = 2
 
-	FixedPrepayCost = 30000
-
 	AssetKeyFamily = 696969
 )
 
 // TapdClient is an interface that groups the methods required to interact with
 // the taproot-assets server and the wallet.
-type TapdClient interface {
+type AssetClient interface {
 	taprpc.TaprootAssetsClient
 	wrpc.AssetWalletClient
 	mintrpc.MintClient

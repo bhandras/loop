@@ -1,4 +1,4 @@
-package out
+package assets
 
 import (
 	"bytes"
@@ -113,7 +113,7 @@ var (
 // FSMConfig contains the configuration for the FSM.
 type FSMConfig struct {
 	// TapdClient is the client to interact with the taproot asset daemon.
-	TapdClient TapdClient
+	TapdClient AssetClient
 
 	// AssetClient is the client to interact with the asset swap server.
 	AssetClient swapserverrpc.AssetsSwapServerClient

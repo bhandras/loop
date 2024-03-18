@@ -7,7 +7,6 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/lightninglabs/loop/assets/out"
 	"github.com/lightninglabs/loop/fsm"
 	"github.com/lightninglabs/loop/loopdb"
 	"github.com/lightninglabs/loop/loopdb/sqlc"
@@ -56,7 +55,7 @@ func NewPostgresStore(queries BaseDB) *PostgresStore {
 
 // CreateAssetSwapOut creates a new asset swap out in the database.
 func (p *PostgresStore) CreateAssetSwapOut(ctx context.Context,
-	swap *out.SwapOut) error {
+	swap *SwapOut) error {
 
 	params := sqlc.CreateAssetSwapParams{
 		SwapHash:         swap.SwapHash[:],
@@ -169,13 +168,13 @@ func (p *PostgresStore) InsertAssetSwapUpdate(ctx context.Context,
 }
 
 // GetAllAssetOuts returns all the asset outs from the database.
-func (p *PostgresStore) GetAllAssetOuts(ctx context.Context) ([]*out.SwapOut, error) {
+func (p *PostgresStore) GetAllAssetOuts(ctx context.Context) ([]*SwapOut, error) {
 	dbAssetOuts, err := p.queries.GetAllAssetOutSwaps(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	assetOuts := make([]*out.SwapOut, 0, len(dbAssetOuts))
+	assetOuts := make([]*SwapOut, 0, len(dbAssetOuts))
 	for _, dbAssetOut := range dbAssetOuts {
 		assetOut, err := newSwapOutFromDB(
 			dbAssetOut.AssetSwap, dbAssetOut.AssetOutSwap,
@@ -190,7 +189,7 @@ func (p *PostgresStore) GetAllAssetOuts(ctx context.Context) ([]*out.SwapOut, er
 }
 
 // GetActiveAssetOuts returns all the active asset outs from the database.
-func (p *PostgresStore) GetActiveAssetOuts(ctx context.Context) ([]*out.SwapOut,
+func (p *PostgresStore) GetActiveAssetOuts(ctx context.Context) ([]*SwapOut,
 	error) {
 
 	dbAssetOuts, err := p.queries.GetAllAssetOutSwaps(ctx)
@@ -198,9 +197,9 @@ func (p *PostgresStore) GetActiveAssetOuts(ctx context.Context) ([]*out.SwapOut,
 		return nil, err
 	}
 
-	assetOuts := make([]*out.SwapOut, 0)
+	assetOuts := make([]*SwapOut, 0)
 	for _, dbAssetOut := range dbAssetOuts {
-		if out.IsFinishedState(fsm.StateType(dbAssetOut.UpdateState)) {
+		if IsFinishedState(fsm.StateType(dbAssetOut.UpdateState)) {
 			continue
 		}
 
@@ -220,7 +219,7 @@ func (p *PostgresStore) GetActiveAssetOuts(ctx context.Context) ([]*out.SwapOut,
 // newSwapOutFromDB creates a new SwapOut from the databse rows.
 func newSwapOutFromDB(assetSwap sqlc.AssetSwap,
 	assetOutSwap sqlc.AssetOutSwap, state string) (
-	*out.SwapOut, error) {
+	*SwapOut, error) {
 
 	swapHash, err := lntypes.MakeHash(assetSwap.SwapHash)
 	if err != nil {
@@ -267,7 +266,7 @@ func newSwapOutFromDB(assetSwap sqlc.AssetSwap,
 		)
 	}
 
-	return &out.SwapOut{
+	return &SwapOut{
 		SwapHash:         swapHash,
 		SwapPreimage:     swapPreimage,
 		State:            fsm.StateType(state),
