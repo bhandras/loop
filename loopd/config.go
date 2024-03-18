@@ -11,6 +11,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/aperture/lsat"
+	"github.com/lightninglabs/loop/assets"
 	"github.com/lightninglabs/loop/loopdb"
 	"github.com/lightningnetwork/lnd/cert"
 	"github.com/lightningnetwork/lnd/lncfg"
@@ -175,6 +176,8 @@ type Config struct {
 	Server *loopServerConfig `group:"server" namespace:"server"`
 
 	View viewParameters `command:"view" alias:"v" description:"View all swaps in the database. This command can only be executed when loopd is not running."`
+
+	TapdConfig *assets.TapdConfig `group:"tapd" namespace:"tapd"`
 }
 
 const (
@@ -216,6 +219,7 @@ func DefaultConfig() Config {
 			Host:         "localhost:10009",
 			MacaroonPath: DefaultLndMacaroonPath,
 		},
+		TapdConfig: assets.DefaultTapdConfig(),
 	}
 }
 
