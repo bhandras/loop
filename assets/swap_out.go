@@ -175,7 +175,7 @@ func (s *SwapOut) createSweepVpkt(ctx context.Context, htlcProof *proof.Proof,
 	scriptKey asset.ScriptKey, internalKey keychain.KeyDescriptor,
 ) (*tappsbt.VPacket, error) {
 
-	sweepVpkt, err := tappsbt.PacketFromProofs(
+	sweepVpkt, err := tappsbt.FromProofs(
 		[]*proof.Proof{htlcProof}, &address.RegressionNetTap,
 	)
 	if err != nil {

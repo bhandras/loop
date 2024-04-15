@@ -168,7 +168,7 @@ func SelectHopHints(ctx context.Context, lnd *lndclient.LndServices,
 			},
 		)
 
-		channelID := lnwire.NewChanIDFromOutPoint(outPoint)
+		channelID := lnwire.NewChanIDFromOutPoint(*outPoint)
 		scID := lnwire.NewShortChanIDFromInt(channel.ChannelID)
 		aliasCache[channelID] = scID
 	}
@@ -414,7 +414,7 @@ func invoicesrpcSelectHopHints(amtMSat lnwire.MilliSatoshi, cfg *SelectHopHintsC
 
 		// Lookup and see if there is an alias SCID that exists.
 		chanID := lnwire.NewChanIDFromOutPoint(
-			&channel.FundingOutpoint,
+			channel.FundingOutpoint,
 		)
 		alias, _ := cfg.GetAlias(chanID)
 
@@ -471,7 +471,7 @@ func invoicesrpcSelectHopHints(amtMSat lnwire.MilliSatoshi, cfg *SelectHopHintsC
 
 		// Lookup and see if there's an alias SCID that exists.
 		chanID := lnwire.NewChanIDFromOutPoint(
-			&channel.FundingOutpoint,
+			channel.FundingOutpoint,
 		)
 		alias, _ := cfg.GetAlias(chanID)
 
