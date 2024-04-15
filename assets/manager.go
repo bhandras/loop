@@ -2,11 +2,14 @@ package assets
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightninglabs/loop/assets/swapin"
 	"github.com/lightninglabs/loop/fsm"
 	loop_rpc "github.com/lightninglabs/loop/swapserverrpc"
 	"github.com/lightninglabs/loop/utils"
@@ -32,19 +35,24 @@ type Config struct {
 	ChainNotifier        lndclient.ChainNotifierClient
 	Router               lndclient.RouterClient
 	LndClient            lndclient.LightningClient
+	Invoices             lndclient.InvoicesClient
 	Store                *PostgresStore
+	SwapInStore          *InmemStore
 	ServerClient         loop_rpc.AssetsSwapServerClient
+	ChainParams          *chaincfg.Params
 }
 
 type AssetsSwapManager struct {
 	cfg *Config
 
-	expiryManager *utils.ExpiryManager
-	txConfManager *utils.TxSubscribeConfirmationManager
+	expiryManager  *utils.ExpiryManager
+	txConfManager  *utils.TxSubscribeConfirmationManager
+	invoiceManager *utils.SubscribeInvoiceManager
 
 	blockHeight    int32
 	runCtx         context.Context
 	activeSwapOuts map[lntypes.Hash]*OutFSM
+	activeSwapIns  map[lntypes.Hash]*swapin.FSM
 
 	sync.Mutex
 }
@@ -54,6 +62,7 @@ func NewAssetSwapServer(config *Config) *AssetsSwapManager {
 		cfg: config,
 
 		activeSwapOuts: make(map[lntypes.Hash]*OutFSM),
+		activeSwapIns:  make(map[lntypes.Hash]*swapin.FSM),
 	}
 }
 
@@ -75,6 +84,7 @@ func (m *AssetsSwapManager) Run(ctx context.Context, blockHeight int32) error {
 	m.txConfManager = utils.NewTxSubscribeConfirmationManager(
 		m.cfg.ChainNotifier,
 	)
+	m.invoiceManager = utils.NewSubscribeInvoiceManager(m.cfg.Invoices)
 
 	// Start the expiry manager.
 	errChan := make(chan error, 1)
@@ -201,8 +211,133 @@ func (m *AssetsSwapManager) getFSMOutConfig() *FSMConfig {
 	}
 }
 
+// getSwapInFSMConfig retruns a swap in FSM config.
+func (m *AssetsSwapManager) getSwapInFSMConfig() *swapin.FSMConfig {
+	return &swapin.FSMConfig{
+		TapdClient:            m.cfg.AssetClient,
+		AssetClient:           m.cfg.ServerClient,
+		BlockHeightSubscriber: m.expiryManager,
+		InvoiceSubscriber:     m.invoiceManager,
+		TxConfSubscriber:      m.txConfManager,
+		ExchangeRateProvider:  m.cfg.ExchangeRateProvider,
+		Invoices:              m.cfg.Invoices,
+		Wallet:                m.cfg.Wallet,
+		Router:                m.cfg.Router,
+		Signer:                m.cfg.Signer,
+		Store:                 m.cfg.SwapInStore,
+		ChainParams:           m.cfg.ChainParams,
+	}
+}
+
 func (m *AssetsSwapManager) ListSwapOutoutputs(ctx context.Context) ([]*SwapOut,
 	error) {
 
 	return m.cfg.Store.GetAllAssetOuts(ctx)
+}
+
+func (m *AssetsSwapManager) NewSwapIn(ctx context.Context, assetID []byte,
+	amt uint64) (*swapin.FSM, error) {
+
+	// Create a new swap in FSM.
+	swapInFSM := swapin.NewFSM(m.runCtx, m.getSwapInFSMConfig())
+
+	// Send the initial event to the FSM.
+	err := swapInFSM.SendEvent(
+		swapin.EventOnRequestNew, &swapin.InitContext{
+			AssetID: assetID,
+			Amount:  amt,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	// Check if the fsm has an error.
+	if swapInFSM.LastActionError != nil {
+		return nil, swapInFSM.LastActionError
+	}
+
+	// Wait for the fsm to be in the state we expect.
+	err = swapInFSM.DefaultObserver.WaitForState(
+		ctx, time.Second*15, swapin.StateAcquiredQuote,
+		fsm.WithAbortEarlyOnErrorOption(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add the swap to the active swap ins.
+	m.Lock()
+	m.activeSwapIns[swapInFSM.SwapIn.SwapHash] = swapInFSM
+	m.Unlock()
+
+	return swapInFSM, nil
+}
+
+func (m *AssetsSwapManager) SwapInQuote(ctx context.Context,
+	swapHash lntypes.Hash) (*swapin.Quote, error) {
+
+	m.Lock()
+	swapInFSM, ok := m.activeSwapIns[swapHash]
+	m.Unlock()
+
+	if !ok {
+		return nil, fmt.Errorf("swapin not found")
+	}
+
+	// Wait for the fsm to be in the state we expect.
+	err := swapInFSM.DefaultObserver.WaitForState(
+		ctx, time.Second*5, swapin.StatePendingQuote,
+		fsm.WithAbortEarlyOnErrorOption(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = swapInFSM.SendEvent(swapin.EventOnQuote, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if swapInFSM.LastActionError != nil {
+		return nil, swapInFSM.LastActionError
+	}
+
+	if swapInFSM.SwapIn.State != swapin.StateAcquiredQuote {
+		return nil, fmt.Errorf("unexpected state %v",
+			swapInFSM.SwapIn.State)
+	}
+
+	return swapInFSM.SwapIn.LastQuote, nil
+}
+
+func (m *AssetsSwapManager) ExecuteSwapIn(ctx context.Context,
+	swapHash lntypes.Hash) error {
+
+	m.Lock()
+	swapInFSM, ok := m.activeSwapIns[swapHash]
+	m.Unlock()
+
+	if !ok {
+		return fmt.Errorf("swapin not found")
+	}
+
+	if swapInFSM.SwapIn.State != swapin.StateAcquiredQuote {
+		return fmt.Errorf("unexpected state %v", swapInFSM.SwapIn.State)
+	}
+
+	err := swapInFSM.SendEvent(swapin.EventOnExecuteSwap, nil)
+	if err != nil {
+		return err
+	}
+
+	if swapInFSM.LastActionError != nil {
+		return swapInFSM.LastActionError
+	}
+
+	if swapInFSM.SwapIn.State != swapin.StateSendSwapPayment {
+		return fmt.Errorf("unexpected state %v",
+			swapInFSM.SwapIn.State)
+	}
+
+	return nil
 }

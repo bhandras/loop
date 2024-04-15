@@ -22,6 +22,9 @@ type AssetsClientClient interface {
 	ListAssetSwaps(ctx context.Context, in *ListAssetSwapsRequest, opts ...grpc.CallOption) (*ListAssetSwapsResponse, error)
 	ClientListAvailableAssets(ctx context.Context, in *ClientListAvailableAssetsRequest, opts ...grpc.CallOption) (*ClientListAvailableAssetsResponse, error)
 	ClientGetAssetSwapOutQuote(ctx context.Context, in *ClientGetAssetSwapOutQuoteRequest, opts ...grpc.CallOption) (*ClientGetAssetSwapOutQuoteResponse, error)
+	BeginSwapIn(ctx context.Context, in *BeginSwapInRequest, opts ...grpc.CallOption) (*BeginSwapInResponse, error)
+	QuoteSwapIn(ctx context.Context, in *QuoteSwapInRequest, opts ...grpc.CallOption) (*QuoteSwapInResponse, error)
+	ExecuteSwapIn(ctx context.Context, in *ExecuteSwapInRequest, opts ...grpc.CallOption) (*ExecuteSwapInResponse, error)
 }
 
 type assetsClientClient struct {
@@ -68,6 +71,33 @@ func (c *assetsClientClient) ClientGetAssetSwapOutQuote(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *assetsClientClient) BeginSwapIn(ctx context.Context, in *BeginSwapInRequest, opts ...grpc.CallOption) (*BeginSwapInResponse, error) {
+	out := new(BeginSwapInResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsClient/BeginSwapIn", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assetsClientClient) QuoteSwapIn(ctx context.Context, in *QuoteSwapInRequest, opts ...grpc.CallOption) (*QuoteSwapInResponse, error) {
+	out := new(QuoteSwapInResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsClient/QuoteSwapIn", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assetsClientClient) ExecuteSwapIn(ctx context.Context, in *ExecuteSwapInRequest, opts ...grpc.CallOption) (*ExecuteSwapInResponse, error) {
+	out := new(ExecuteSwapInResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsClient/ExecuteSwapIn", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AssetsClientServer is the server API for AssetsClient service.
 // All implementations must embed UnimplementedAssetsClientServer
 // for forward compatibility
@@ -76,6 +106,9 @@ type AssetsClientServer interface {
 	ListAssetSwaps(context.Context, *ListAssetSwapsRequest) (*ListAssetSwapsResponse, error)
 	ClientListAvailableAssets(context.Context, *ClientListAvailableAssetsRequest) (*ClientListAvailableAssetsResponse, error)
 	ClientGetAssetSwapOutQuote(context.Context, *ClientGetAssetSwapOutQuoteRequest) (*ClientGetAssetSwapOutQuoteResponse, error)
+	BeginSwapIn(context.Context, *BeginSwapInRequest) (*BeginSwapInResponse, error)
+	QuoteSwapIn(context.Context, *QuoteSwapInRequest) (*QuoteSwapInResponse, error)
+	ExecuteSwapIn(context.Context, *ExecuteSwapInRequest) (*ExecuteSwapInResponse, error)
 	mustEmbedUnimplementedAssetsClientServer()
 }
 
@@ -94,6 +127,15 @@ func (UnimplementedAssetsClientServer) ClientListAvailableAssets(context.Context
 }
 func (UnimplementedAssetsClientServer) ClientGetAssetSwapOutQuote(context.Context, *ClientGetAssetSwapOutQuoteRequest) (*ClientGetAssetSwapOutQuoteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClientGetAssetSwapOutQuote not implemented")
+}
+func (UnimplementedAssetsClientServer) BeginSwapIn(context.Context, *BeginSwapInRequest) (*BeginSwapInResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BeginSwapIn not implemented")
+}
+func (UnimplementedAssetsClientServer) QuoteSwapIn(context.Context, *QuoteSwapInRequest) (*QuoteSwapInResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QuoteSwapIn not implemented")
+}
+func (UnimplementedAssetsClientServer) ExecuteSwapIn(context.Context, *ExecuteSwapInRequest) (*ExecuteSwapInResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExecuteSwapIn not implemented")
 }
 func (UnimplementedAssetsClientServer) mustEmbedUnimplementedAssetsClientServer() {}
 
@@ -180,6 +222,60 @@ func _AssetsClient_ClientGetAssetSwapOutQuote_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AssetsClient_BeginSwapIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BeginSwapInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsClientServer).BeginSwapIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsClient/BeginSwapIn",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsClientServer).BeginSwapIn(ctx, req.(*BeginSwapInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssetsClient_QuoteSwapIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuoteSwapInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsClientServer).QuoteSwapIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsClient/QuoteSwapIn",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsClientServer).QuoteSwapIn(ctx, req.(*QuoteSwapInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssetsClient_ExecuteSwapIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExecuteSwapInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsClientServer).ExecuteSwapIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsClient/ExecuteSwapIn",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsClientServer).ExecuteSwapIn(ctx, req.(*ExecuteSwapInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AssetsClient_ServiceDesc is the grpc.ServiceDesc for AssetsClient service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -202,6 +298,18 @@ var AssetsClient_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ClientGetAssetSwapOutQuote",
 			Handler:    _AssetsClient_ClientGetAssetSwapOutQuote_Handler,
+		},
+		{
+			MethodName: "BeginSwapIn",
+			Handler:    _AssetsClient_BeginSwapIn_Handler,
+		},
+		{
+			MethodName: "QuoteSwapIn",
+			Handler:    _AssetsClient_QuoteSwapIn_Handler,
+		},
+		{
+			MethodName: "ExecuteSwapIn",
+			Handler:    _AssetsClient_ExecuteSwapIn_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

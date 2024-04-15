@@ -35,6 +35,20 @@ service AssetsSwapServer {
     // RequestMusig2Sweep requests a musig2 sweep from the server.
     rpc RequestMusig2Sweep (RequestMusig2SweepRequest)
         returns (RequestMusig2SweepResponse);
+
+    // NewAssetLoopIn requests a new asset loop in swap from the server.
+    rpc NewAssetLoopIn (NewAssetLoopInRequest) returns (NewAssetLoopInResponse);
+
+    // QuoteAssetLoopIn returns a quote for an initiated asset loopin swap.
+    rpc QuoteAssetLoopIn (QuoteAssetLoopInRequest)
+        returns (QuoteAssetLoopInResponse);
+
+    // ExecuteAssetLoopIn executes an initiated asset loopin swap.
+    rpc ExecuteAssetLoopIn (ExecuteAssetLoopInRequest)
+        returns (ExecuteAssetLoopInResponse);
+
+    rpc RevealOutputProof (RevealOutputProofRequest)
+        returns (RevealOutputProofResponse);
 }
 
 message QuoteAssetLoopOutRequest {
@@ -130,4 +144,54 @@ message RequestMusig2SweepResponse {
     bytes sender_nonce = 1;
     // sender_sig is the signature of the sender.
     bytes sender_sig = 2;
+}
+
+// --- LOOP IN ---
+message NewAssetLoopInRequest {
+    bytes asset_id = 1;
+
+    uint64 amount = 2;
+
+    bytes sender_pubkey = 3;
+}
+
+message NewAssetLoopInResponse {
+    bytes swap_hash = 1;
+
+    bytes receiver_pubkey = 2;
+}
+
+message QuoteAssetLoopInRequest {
+    bytes swap_hash = 1;
+}
+
+message QuoteAssetLoopInResponse {
+    // TODO: we may want to use a more precise price, eg. sats per 100 asset
+    // units or similar.
+    uint64 sats_per_asset_unit = 1;
+
+    uint64 prepay_amt = 2;
+
+    // Expiry is the unix timestamp of the expiry of the quote.
+    int64 expiry = 3;
+}
+
+message ExecuteAssetLoopInRequest {
+    bytes swap_hash = 1;
+
+    string swap_invoice = 3;
+}
+
+message ExecuteAssetLoopInResponse {
+    string prepay_invoice = 1;
+}
+
+message RevealOutputProofRequest {
+    bytes swap_hash = 1;
+
+    bytes raw_proof_file = 2;
+}
+
+message RevealOutputProofResponse {
+    bytes preimage = 1;
 }

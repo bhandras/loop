@@ -44,8 +44,8 @@ type TapdConfig struct {
 func DefaultTapdConfig() *TapdConfig {
 	return &TapdConfig{
 		Host:         "localhost:10030",
-		MacaroonPath: "/home/kon-dev/docker/mounts/regtest/tapd-alice/admin.macaroon",
-		TLSPath:      "/home/kon-dev/docker/mounts/regtest/tapd-alice/tls.cert",
+		MacaroonPath: "/Users/bhandras/work/dev-resources/docker-regtest/mounts/regtest/tapd-alice/admin.macaroon",
+		TLSPath:      "/Users/bhandras/work/dev-resources/docker-regtest/mounts/regtest/tapd-alice/tls.cert",
 	}
 
 }

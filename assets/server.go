@@ -7,6 +7,7 @@ import (
 	clientrpc "github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/loop/swapserverrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
+	"github.com/lightningnetwork/lnd/lntypes"
 )
 
 type AssetsClientServer struct {
@@ -125,4 +126,55 @@ func (a *AssetsClientServer) ClientGetAssetSwapOutQuote(ctx context.Context,
 		PrepayAmt:   quoteRes.FixedPrepayAmt,
 		SatsPerUnit: quoteRes.CurrentSatsPerAssetUnit,
 	}, nil
+}
+
+func (a *AssetsClientServer) BeginSwapIn(ctx context.Context,
+	req *clientrpc.BeginSwapInRequest) (*clientrpc.BeginSwapInResponse,
+	error) {
+
+	swap, err := a.manager.NewSwapIn(ctx, req.Asset, req.Amt)
+	if err != nil {
+		return nil, err
+	}
+	return &clientrpc.BeginSwapInResponse{
+		SwapHash: swap.SwapIn.SwapHash[:],
+	}, nil
+}
+
+func (a *AssetsClientServer) QuoteSwapIn(ctx context.Context,
+	req *clientrpc.QuoteSwapInRequest) (*clientrpc.QuoteSwapInResponse,
+	error) {
+
+	swapHash, err := lntypes.MakeHash(req.SwapHash)
+	if err != nil {
+		return nil, err
+	}
+
+	quote, err := a.manager.SwapInQuote(ctx, swapHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return &clientrpc.QuoteSwapInResponse{
+		SatsPerAssetUnit: uint64(quote.SatsPerAssetUnit),
+		PrepayAmt:        uint64(quote.PrepayAmount),
+		Expiry:           quote.Expiry.UTC().Unix(),
+	}, nil
+}
+
+func (a *AssetsClientServer) ExecuteSwapIn(ctx context.Context,
+	req *clientrpc.ExecuteSwapInRequest) (*clientrpc.ExecuteSwapInResponse,
+	error) {
+
+	swapHash, err := lntypes.MakeHash(req.SwapHash)
+	if err != nil {
+		return nil, err
+	}
+
+	err = a.manager.ExecuteSwapIn(ctx, swapHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return &clientrpc.ExecuteSwapInResponse{}, nil
 }

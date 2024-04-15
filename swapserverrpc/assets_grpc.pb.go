@@ -33,6 +33,13 @@ type AssetsSwapServerClient interface {
 	RequestAssetBuy(ctx context.Context, in *RequestAssetBuyRequest, opts ...grpc.CallOption) (*RequestAssetBuyResponse, error)
 	// RequestMusig2Sweep requests a musig2 sweep from the server.
 	RequestMusig2Sweep(ctx context.Context, in *RequestMusig2SweepRequest, opts ...grpc.CallOption) (*RequestMusig2SweepResponse, error)
+	// NewAssetLoopIn requests a new asset loop in swap from the server.
+	NewAssetLoopIn(ctx context.Context, in *NewAssetLoopInRequest, opts ...grpc.CallOption) (*NewAssetLoopInResponse, error)
+	// QuoteAssetLoopIn returns a quote for an initiated asset loopin swap.
+	QuoteAssetLoopIn(ctx context.Context, in *QuoteAssetLoopInRequest, opts ...grpc.CallOption) (*QuoteAssetLoopInResponse, error)
+	// ExecuteAssetLoopIn executes an initiated asset loopin swap.
+	ExecuteAssetLoopIn(ctx context.Context, in *ExecuteAssetLoopInRequest, opts ...grpc.CallOption) (*ExecuteAssetLoopInResponse, error)
+	RevealOutputProof(ctx context.Context, in *RevealOutputProofRequest, opts ...grpc.CallOption) (*RevealOutputProofResponse, error)
 }
 
 type assetsSwapServerClient struct {
@@ -97,6 +104,42 @@ func (c *assetsSwapServerClient) RequestMusig2Sweep(ctx context.Context, in *Req
 	return out, nil
 }
 
+func (c *assetsSwapServerClient) NewAssetLoopIn(ctx context.Context, in *NewAssetLoopInRequest, opts ...grpc.CallOption) (*NewAssetLoopInResponse, error) {
+	out := new(NewAssetLoopInResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsSwapServer/NewAssetLoopIn", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assetsSwapServerClient) QuoteAssetLoopIn(ctx context.Context, in *QuoteAssetLoopInRequest, opts ...grpc.CallOption) (*QuoteAssetLoopInResponse, error) {
+	out := new(QuoteAssetLoopInResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsSwapServer/QuoteAssetLoopIn", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assetsSwapServerClient) ExecuteAssetLoopIn(ctx context.Context, in *ExecuteAssetLoopInRequest, opts ...grpc.CallOption) (*ExecuteAssetLoopInResponse, error) {
+	out := new(ExecuteAssetLoopInResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsSwapServer/ExecuteAssetLoopIn", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assetsSwapServerClient) RevealOutputProof(ctx context.Context, in *RevealOutputProofRequest, opts ...grpc.CallOption) (*RevealOutputProofResponse, error) {
+	out := new(RevealOutputProofResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.AssetsSwapServer/RevealOutputProof", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AssetsSwapServerServer is the server API for AssetsSwapServer service.
 // All implementations must embed UnimplementedAssetsSwapServerServer
 // for forward compatibility
@@ -116,6 +159,13 @@ type AssetsSwapServerServer interface {
 	RequestAssetBuy(context.Context, *RequestAssetBuyRequest) (*RequestAssetBuyResponse, error)
 	// RequestMusig2Sweep requests a musig2 sweep from the server.
 	RequestMusig2Sweep(context.Context, *RequestMusig2SweepRequest) (*RequestMusig2SweepResponse, error)
+	// NewAssetLoopIn requests a new asset loop in swap from the server.
+	NewAssetLoopIn(context.Context, *NewAssetLoopInRequest) (*NewAssetLoopInResponse, error)
+	// QuoteAssetLoopIn returns a quote for an initiated asset loopin swap.
+	QuoteAssetLoopIn(context.Context, *QuoteAssetLoopInRequest) (*QuoteAssetLoopInResponse, error)
+	// ExecuteAssetLoopIn executes an initiated asset loopin swap.
+	ExecuteAssetLoopIn(context.Context, *ExecuteAssetLoopInRequest) (*ExecuteAssetLoopInResponse, error)
+	RevealOutputProof(context.Context, *RevealOutputProofRequest) (*RevealOutputProofResponse, error)
 	mustEmbedUnimplementedAssetsSwapServerServer()
 }
 
@@ -140,6 +190,18 @@ func (UnimplementedAssetsSwapServerServer) RequestAssetBuy(context.Context, *Req
 }
 func (UnimplementedAssetsSwapServerServer) RequestMusig2Sweep(context.Context, *RequestMusig2SweepRequest) (*RequestMusig2SweepResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestMusig2Sweep not implemented")
+}
+func (UnimplementedAssetsSwapServerServer) NewAssetLoopIn(context.Context, *NewAssetLoopInRequest) (*NewAssetLoopInResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewAssetLoopIn not implemented")
+}
+func (UnimplementedAssetsSwapServerServer) QuoteAssetLoopIn(context.Context, *QuoteAssetLoopInRequest) (*QuoteAssetLoopInResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QuoteAssetLoopIn not implemented")
+}
+func (UnimplementedAssetsSwapServerServer) ExecuteAssetLoopIn(context.Context, *ExecuteAssetLoopInRequest) (*ExecuteAssetLoopInResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExecuteAssetLoopIn not implemented")
+}
+func (UnimplementedAssetsSwapServerServer) RevealOutputProof(context.Context, *RevealOutputProofRequest) (*RevealOutputProofResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevealOutputProof not implemented")
 }
 func (UnimplementedAssetsSwapServerServer) mustEmbedUnimplementedAssetsSwapServerServer() {}
 
@@ -262,6 +324,78 @@ func _AssetsSwapServer_RequestMusig2Sweep_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AssetsSwapServer_NewAssetLoopIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewAssetLoopInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsSwapServerServer).NewAssetLoopIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsSwapServer/NewAssetLoopIn",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsSwapServerServer).NewAssetLoopIn(ctx, req.(*NewAssetLoopInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssetsSwapServer_QuoteAssetLoopIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuoteAssetLoopInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsSwapServerServer).QuoteAssetLoopIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsSwapServer/QuoteAssetLoopIn",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsSwapServerServer).QuoteAssetLoopIn(ctx, req.(*QuoteAssetLoopInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssetsSwapServer_ExecuteAssetLoopIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExecuteAssetLoopInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsSwapServerServer).ExecuteAssetLoopIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsSwapServer/ExecuteAssetLoopIn",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsSwapServerServer).ExecuteAssetLoopIn(ctx, req.(*ExecuteAssetLoopInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssetsSwapServer_RevealOutputProof_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevealOutputProofRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsSwapServerServer).RevealOutputProof(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.AssetsSwapServer/RevealOutputProof",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsSwapServerServer).RevealOutputProof(ctx, req.(*RevealOutputProofRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AssetsSwapServer_ServiceDesc is the grpc.ServiceDesc for AssetsSwapServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -292,6 +426,22 @@ var AssetsSwapServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestMusig2Sweep",
 			Handler:    _AssetsSwapServer_RequestMusig2Sweep_Handler,
+		},
+		{
+			MethodName: "NewAssetLoopIn",
+			Handler:    _AssetsSwapServer_NewAssetLoopIn_Handler,
+		},
+		{
+			MethodName: "QuoteAssetLoopIn",
+			Handler:    _AssetsSwapServer_QuoteAssetLoopIn_Handler,
+		},
+		{
+			MethodName: "ExecuteAssetLoopIn",
+			Handler:    _AssetsSwapServer_ExecuteAssetLoopIn_Handler,
+		},
+		{
+			MethodName: "RevealOutputProof",
+			Handler:    _AssetsSwapServer_RevealOutputProof_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

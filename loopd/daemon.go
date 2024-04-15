@@ -551,11 +551,14 @@ func (d *Daemon) initialize(withMacaroonService bool) error {
 			Store:                assetsStore,
 			AssetClient:          tapdClient,
 			LndClient:            d.lnd.Client,
+			Invoices:             d.lnd.Invoices,
 			Router:               d.lnd.Router,
 			ChainNotifier:        d.lnd.ChainNotifier,
 			Signer:               d.lnd.Signer,
 			Wallet:               d.lnd.WalletKit,
 			ExchangeRateProvider: assets.NewFixedExchangeRateProvider(),
+			SwapInStore:          assets.NewInmemStore(),
+			ChainParams:          d.lnd.ChainParams,
 		}
 		assetManager = assets.NewAssetSwapServer(assetsConfig)
 		assetClientServer = assets.NewAssetsServer(assetManager)

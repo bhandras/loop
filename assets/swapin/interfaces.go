@@ -1,0 +1,116 @@
+package swapin
+
+import (
+	"context"
+
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/psbt"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/lightninglabs/lndclient"
+	"github.com/lightninglabs/taproot-assets/asset"
+	"github.com/lightninglabs/taproot-assets/tappsbt"
+	"github.com/lightninglabs/taproot-assets/taprpc"
+	wrpc "github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/tapdevrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
+	"github.com/lightningnetwork/lnd/chainntnfs"
+	"github.com/lightningnetwork/lnd/keychain"
+	"github.com/lightningnetwork/lnd/lntypes"
+	"github.com/lightningnetwork/lnd/lnwallet/chainfee"
+)
+
+const (
+	// DefaultSwapCSVExpiry is the default expiry for a swap in blocks.
+	DefaultSwapCSVExpiry = int32(24)
+
+	defaultHtlcFeeConfTarget   = 3
+	defaultHtlcConfRequirement = 2
+
+	AssetKeyFamily = 696969
+)
+
+// TapdClient is an interface that groups the methods required to interact with
+// the taproot-assets server and the wallet.
+type AssetClient interface {
+	taprpc.TaprootAssetsClient
+	wrpc.AssetWalletClient
+	mintrpc.MintClient
+	universerpc.UniverseClient
+	tapdevrpc.TapDevClient
+
+	// FundAndSignVpacket funds ands signs a vpacket.
+	FundAndSignVpacket(ctx context.Context,
+		vpkt *tappsbt.VPacket) (*tappsbt.VPacket, error)
+
+	// PrepareAndCommitVirtualPsbts prepares and commits virtual psbts.
+	PrepareAndCommitVirtualPsbts(ctx context.Context,
+		vpkt *tappsbt.VPacket, feeRateSatPerKVByte chainfee.SatPerVByte) (
+		*psbt.Packet, []*tappsbt.VPacket, []*tappsbt.VPacket,
+		*wrpc.CommitVirtualPsbtsResponse, error)
+
+	// LogAndPublish logs and publishes the virtual psbts.
+	LogAndPublish(ctx context.Context, btcPkt *psbt.Packet,
+		activeAssets []*tappsbt.VPacket, passiveAssets []*tappsbt.VPacket,
+		commitResp *wrpc.CommitVirtualPsbtsResponse) (*taprpc.SendAssetResponse,
+		error)
+
+	// CheckBalanceById checks the balance of an asset by its id.
+	CheckBalanceById(ctx context.Context, assetId []byte,
+		requestedBalance btcutil.Amount) error
+
+	// DeriveNewKeys derives a new internal and script key.
+	DeriveNewKeys(ctx context.Context) (asset.ScriptKey,
+		keychain.KeyDescriptor, error)
+}
+
+// SwapStore is an interface that groups the methods required to store swap
+// information.
+type SwapStore interface {
+	// CreateAssetSwapIn creates a new swap out in the store.
+	CreateAssetSwapIn(ctx context.Context, swap *SwapIn) error
+
+	GetAssetSwapIn(ctx context.Context, swapHash []byte) (*SwapIn, error)
+
+	UpdateAssetSwapIn(ctx context.Context, swap *SwapIn) error
+}
+
+// BlockHeightSubscriber is responsible for subscribing to the expiry height
+// of a swap, as well as getting the current block height.
+type BlockHeightSubscriber interface {
+	// SubscribeExpiry subscribes to the expiry of a swap. It returns true
+	// if the expiry is already past. Otherwise, it returns false and calls
+	// the expiryFunc when the expiry height is reached.
+	SubscribeExpiry(swapHash [32]byte,
+		expiryHeight int32, expiryFunc func()) bool
+	// GetBlockHeight returns the current block height.
+	GetBlockHeight() int32
+}
+
+// InvoiceSubscriber is responsible for subscribing to an invoice.
+type InvoiceSubscriber interface {
+	// SubscribeInvoice subscribes to an invoice. The update callback is
+	// called when the invoice is updated and the error callback is called
+	// when an error occurs.
+	SubscribeInvoice(ctx context.Context, invoiceHash lntypes.Hash,
+		updateCallback func(lndclient.InvoiceUpdate, error)) error
+}
+
+// TxConfirmationSubscriber is responsible for subscribing to the confirmation
+// of a transaction.
+type TxConfirmationSubscriber interface {
+
+	// SubscribeTxConfirmation subscribes to the confirmation of a
+	// pkscript on the chain. The callback is called when the pkscript is
+	// confirmed or when an error occurs.
+	SubscribeTxConfirmation(ctx context.Context, swapHash lntypes.Hash,
+		txid *chainhash.Hash, pkscript []byte, numConfs int32,
+		eightHint int32, cb func(*chainntnfs.TxConfirmation, error)) error
+}
+
+// ExchangeRateProvider is responsible for providing the exchange rate between
+// assets.
+type ExchangeRateProvider interface {
+	// GetSatsPerAssetUnit returns the amount of satoshis per asset unit.
+	GetSatsPerAssetUnit(assetId []byte) (btcutil.Amount, error)
+}

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "swapserverrpc/common.proto";
+// import "swapserverrpc/common.proto";
 
 package looprpc;
 
@@ -13,6 +13,41 @@ service AssetsClient {
         returns (ClientListAvailableAssetsResponse);
     rpc ClientGetAssetSwapOutQuote (ClientGetAssetSwapOutQuoteRequest)
         returns (ClientGetAssetSwapOutQuoteResponse);
+
+    rpc BeginSwapIn (BeginSwapInRequest) returns (BeginSwapInResponse);
+
+    rpc QuoteSwapIn (QuoteSwapInRequest) returns (QuoteSwapInResponse);
+
+    rpc ExecuteSwapIn (ExecuteSwapInRequest) returns (ExecuteSwapInResponse);
+}
+
+message BeginSwapInRequest {
+    uint64 amt = 1;
+    bytes asset = 2;
+}
+
+message BeginSwapInResponse {
+    bytes swap_hash = 1;
+}
+
+message QuoteSwapInRequest {
+    bytes swap_hash = 1;
+}
+
+message QuoteSwapInResponse {
+    uint64 sats_per_asset_unit = 1;
+
+    uint64 prepay_amt = 2;
+
+    // Expiry is the unix timestamp of the expiry of the quote.
+    int64 expiry = 3;
+}
+
+message ExecuteSwapInRequest {
+    bytes swap_hash = 1;
+}
+
+message ExecuteSwapInResponse {
 }
 
 message SwapOutRequest {

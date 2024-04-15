@@ -830,6 +830,7 @@
         "rules": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/looprpcLiquidityRule"
           },
           "description": "A set of liquidity rules that describe the desired liquidity balance."
@@ -993,6 +994,7 @@
         "swaps": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/looprpcInstantOut"
           },
           "description": "The list of all currently known instant out swaps and their status."
@@ -1005,6 +1007,7 @@
         "reservations": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/looprpcClientReservation"
           },
           "description": "The list of all currently known reservations and their status."
@@ -1047,6 +1050,7 @@
         "swaps": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/looprpcSwapStatus"
           },
           "description": "The list of all currently known swaps and their status."
@@ -1096,6 +1100,7 @@
         "route_hints": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/looprpcRouteHint"
           },
           "description": "Optional route hints to reach the destination through private channels."
@@ -1347,6 +1352,7 @@
         "hop_hints": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/looprpcHopHint"
           },
           "description": "A list of hop hints that when chained together can assist in reaching a\nspecific destination."
@@ -1371,6 +1377,7 @@
         "loop_out": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/looprpcLoopOutRequest"
           },
           "description": "The set of recommended loop outs."
@@ -1378,6 +1385,7 @@
         "loop_in": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/looprpcLoopInRequest"
           },
           "title": "The set of recommended loop in swaps"
@@ -1385,6 +1393,7 @@
         "disqualified": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/looprpcDisqualified"
           },
           "description": "Disqualified contains the set of channels that swaps are not recommended\nfor."
@@ -1534,6 +1543,7 @@
         "tokens": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/looprpcLsatToken"
           },
           "description": "List of all tokens the daemon knows of, including old/expired tokens."
@@ -1562,6 +1572,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -170,14 +171,17 @@ func (s *SubscribeInvoiceManager) SubscribeInvoice(ctx context.Context,
 		for {
 			select {
 			case update := <-updateChan:
+				fmt.Printf("!upd: %v\n", update)
 				callback(update, nil)
 
 			case err := <-errChan:
+				fmt.Printf("!err: %v\n", err)
 				callback(lndclient.InvoiceUpdate{}, err)
 				delete(s.subscribers, invoiceHash)
 				return
 
 			case <-ctx.Done():
+				fmt.Println("!fuck")
 				delete(s.subscribers, invoiceHash)
 				return
 			}
