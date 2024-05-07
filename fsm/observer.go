@@ -105,7 +105,6 @@ func (s *CachedObserver) WaitForState(ctx context.Context,
 	opts ...WaitForStateOption) error {
 
 	var options fsmOptions
-
 	for _, opt := range opts {
 		opt.apply(&options)
 	}
@@ -120,61 +119,80 @@ func (s *CachedObserver) WaitForState(ctx context.Context,
 		}
 	}
 
+	// Create a new context with a timeout.
 	timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Channel to notify when the desired state is reached
-	// or an error occurred.
+	ch := s.WaitForStateAsync(timeoutCtx, state, options.abortEarlyOnError)
+
+	// Wait for either the condition to be met or for a timeout.
+	select {
+	case <-timeoutCtx.Done():
+		return NewErrWaitingForStateTimeout(state)
+
+	case err := <-ch:
+		return err
+	}
+}
+
+// WaitForStateAsync waits asynchronously until the passed context is canceled
+// or the expected state is reached. The function returns a channel that will
+// receive an error if the expected state is reached or an error occurred. If
+// the context is canceled before the expected state is reached, the channel
+// will receive an ErrWaitingForStateTimeout error.
+func (s *CachedObserver) WaitForStateAsync(ctx context.Context, state StateType,
+	abortOnEarlyError bool) chan error {
+
+	// Channel to notify when the desired state is reached or an error
+	// occurred.
 	ch := make(chan error)
 
-	// Goroutine to wait on condition variable
+	// Wait on the notification condition variable asynchronously to avoid
+	// blocking the caller.
 	go func() {
 		s.notificationMx.Lock()
 		defer s.notificationMx.Unlock()
 
-		for {
-			// Check if the last state is the desired state
-			if s.lastNotification.NextState == state {
+		notifyAsync := func(err error) {
+			// To avoid potential deadlock when sending to the
+			// channel, while still holding the notificationMx
+			// lock, we use a goroutine to send the error to the
+			// channel.
+			go func() {
 				select {
-				case <-timeoutCtx.Done():
-					return
+				case <-ctx.Done():
+					ch <- NewErrWaitingForStateTimeout(
+						state,
+					)
 
-				case ch <- nil:
-					return
+				case ch <- err:
 				}
+			}()
+		}
+
+		for {
+			// Check if the last state is the desired state.
+			if s.lastNotification.NextState == state {
+				notifyAsync(nil)
+				return
 			}
 
-			// Check if an error occurred
+			// Check if an error has occurred.
 			if s.lastNotification.Event == OnError {
-				if options.abortEarlyOnError {
-					select {
-					case <-timeoutCtx.Done():
-						return
-
-					case ch <- s.lastNotification.LastActionError:
-						return
-					}
+				lastErr := s.lastNotification.LastActionError
+				if abortOnEarlyError {
+					notifyAsync(lastErr)
+					return
 				}
 			}
 
-			// Otherwise, wait for the next notification
+			// Otherwise use the conditonal variable to wait for
+			// the next notification.
 			s.notificationCond.Wait()
 		}
 	}()
 
-	// Wait for either the condition to be met or for a timeout
-	select {
-	case <-timeoutCtx.Done():
-		return NewErrWaitingForStateTimeout(
-			state, s.lastNotification.NextState,
-		)
-
-	case lastActionErr := <-ch:
-		if lastActionErr != nil {
-			return lastActionErr
-		}
-		return nil
-	}
+	return ch
 }
 
 // FixedSizeSlice is a slice with a fixed size.
