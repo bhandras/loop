@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/wire"
@@ -19,8 +20,9 @@ var (
 	testStartingHeight = int32(600)
 	testNodePubkey     = "03f5374b16f0b1f1b49101de1b9d89e0b460bc57ce9c2f9" +
 		"132b73dfc76d3704daa"
-	testSignature    = []byte{55, 66, 77, 88, 99}
-	testSignatureMsg = "test"
+	testSignature     = []byte{55, 66, 77, 88, 99}
+	testSignatureMsg  = "test"
+	defaultRpcTimeout = time.Minute * 5
 )
 
 // NewMockLnd returns a new instance of LndMockServices that can be used in unit

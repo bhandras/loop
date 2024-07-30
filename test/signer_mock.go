@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
@@ -12,6 +13,7 @@ import (
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/keychain"
+	"github.com/lightningnetwork/lnd/lnrpc/signrpc"
 )
 
 type mockSigner struct {
@@ -124,4 +126,14 @@ func (s *mockSigner) MuSig2CombineSig(context.Context, [32]byte,
 // MuSig2Cleanup removes a session from memory to free up resources.
 func (s *mockSigner) MuSig2Cleanup(context.Context, [32]byte) error {
 	return nil
+}
+
+// RawClientWithMacAuth returns a context with the proper macaroon
+// authentication, the default RPC timeout, and the raw client. Note that this
+// is only included for compatibility with the interface and does not actually
+// return a client.
+func (s *mockSigner) RawClientWithMacAuth(parentCtx context.Context) (
+	context.Context, time.Duration, signrpc.SignerClient) {
+
+	return parentCtx, defaultRpcTimeout, nil
 }

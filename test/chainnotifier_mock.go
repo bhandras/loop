@@ -9,6 +9,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/chainntnfs"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"golang.org/x/net/context"
 )
 
@@ -168,4 +169,14 @@ func (c *mockChainNotifier) RegisterConfirmationsNtfn(ctx context.Context,
 	}
 
 	return reg.ConfChan, errChan, nil
+}
+
+// RawClientWithMacAuth returns a context with the proper macaroon
+// authentication, the default RPC timeout, and the raw client. Note that this
+// is only included for compatibility with the interface and does not actually
+// return a client.
+func (c *mockChainNotifier) RawClientWithMacAuth(parentCtx context.Context) (
+	context.Context, time.Duration, chainrpc.ChainNotifierClient) {
+
+	return parentCtx, defaultRpcTimeout, nil
 }

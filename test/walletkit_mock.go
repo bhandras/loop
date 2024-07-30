@@ -268,3 +268,14 @@ func (m *mockWalletKit) ImportTaprootScript(ctx context.Context,
 
 	return nil, fmt.Errorf("unimplemented")
 }
+
+// RawClientWithMacAuth returns a context with the proper macaroon
+// authentication, the default RPC timeout, and the raw client. Note that this
+// is only included for compatibility with the interface and does not actually
+// return a client.
+func (m *mockWalletKit) RawClientWithMacAuth(
+	parentCtx context.Context) (context.Context, time.Duration,
+	walletrpc.WalletKitClient) {
+
+	return parentCtx, defaultRpcTimeout, nil
+}

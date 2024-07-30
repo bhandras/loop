@@ -111,3 +111,24 @@ func (s *mockInvoices) AddHoldInvoice(ctx context.Context,
 
 	return payReqString, nil
 }
+
+// HtlcModifier is a bidirectional streaming RPC that allows a client to
+// intercept and modify the HTLCs that attempt to settle the given invoice. The
+// server will send HTLCs of invoices to the client and the client can modify
+// some aspects of the HTLC in order to pass the invoice acceptance tests.
+func (s *mockInvoices) HtlcModifier(ctx context.Context,
+	handler lndclient.InvoiceHtlcModifyHandler) error {
+
+	return fmt.Errorf("not implemented")
+}
+
+// RawClientWithMacAuth returns a context with the proper macaroon
+// authentication, the default RPC timeout, and the raw client. Note that this
+// is only included for compatibility with the interface and does not actually
+// return a client.
+func (s *mockInvoices) RawClientWithMacAuth(parentCtx context.Context) (
+	context.Context, time.Duration, invoicesrpc.InvoicesClient) {
+
+	return parentCtx, defaultRpcTimeout, nil
+
+}
