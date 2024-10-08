@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btclog"
-	"github.com/btcsuite/btcwallet/chain"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/labels"
 	"github.com/lightninglabs/loop/loopdb"
@@ -170,12 +168,15 @@ type PublishErrorHandler func(err error, errMsg string, log btclog.Logger)
 // expected, if RBF fails).
 func defaultPublishErrorLogger(err error, errMsg string, log btclog.Logger) {
 	// Check if the error is "insufficient fee" error.
-	if strings.Contains(err.Error(), chain.ErrInsufficientFee.Error()) {
-		// Log "insufficient fee" with level Info.
-		log.Infof("%s: %v", errMsg, err)
+	// TODO: temporary remove due to dependency clash.
+	/*
+		if strings.Contains(err.Error(), chain.ErrInsufficientFee.Error()) {
+			// Log "insufficient fee" with level Info.
+			log.Infof("%s: %v", errMsg, err)
 
-		return
-	}
+			return
+		}
+	*/
 
 	// Log any other error as a warning.
 	log.Warnf("%s: %v", errMsg, err)
