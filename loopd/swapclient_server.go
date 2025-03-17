@@ -22,6 +22,7 @@ import (
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop"
 	"github.com/lightninglabs/loop/assets"
+	assets_deposit "github.com/lightninglabs/loop/assets/deposit"
 	"github.com/lightninglabs/loop/fsm"
 	"github.com/lightninglabs/loop/instantout"
 	"github.com/lightninglabs/loop/instantout/reservation"
@@ -35,6 +36,7 @@ import (
 	"github.com/lightninglabs/loop/staticaddr/withdraw"
 	"github.com/lightninglabs/loop/swap"
 	"github.com/lightninglabs/loop/swapserverrpc"
+	"github.com/lightninglabs/taproot-assets/asset"
 	"github.com/lightninglabs/taproot-assets/rfqmath"
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -97,6 +99,7 @@ type swapClientServer struct {
 	depositManager       *deposit.Manager
 	withdrawalManager    *withdraw.Manager
 	staticLoopInManager  *loopin.Manager
+	assetDepositManager  *assets_deposit.Manager
 	assetClient          *assets.TapdClient
 	swaps                map[lntypes.Hash]loop.SwapInfo
 	subscribers          map[int]chan<- interface{}
@@ -1839,6 +1842,136 @@ func (s *swapClientServer) StaticAddressLoopIn(ctx context.Context,
 		PaymentTimeoutSeconds: loopIn.PaymentTimeoutSeconds,
 		QuotedSwapFeeSatoshis: int64(loopIn.QuotedSwapFee),
 	}, nil
+}
+
+// NewAssetDeposit is the rpc endpoint for loop clients to request a new asset
+// deposit.
+func (s *swapClientServer) NewAssetDeposit(ctx context.Context,
+	in *looprpc.NewAssetDepositRequest) (*looprpc.NewAssetDepositResponse,
+	error) {
+
+	if s.assetDepositManager == nil {
+		return nil, status.Error(codes.Unimplemented,
+			"Restart loop with --experimental")
+	}
+
+	assetIDBytes, err := hex.DecodeString(in.AssetId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument,
+			fmt.Sprintf("invalid asset id: %v", err))
+	}
+
+	var assetID asset.ID
+	if len(assetIDBytes) != len(assetID) {
+		return nil, fmt.Errorf("invalid asset id: expected %v bytes, "+
+			"got %d", len(assetID), len(assetIDBytes))
+	}
+
+	copy(assetID[:], assetIDBytes)
+
+	if in.Amount == 0 {
+		return nil, status.Error(codes.InvalidArgument,
+			"amount must be greater than zero")
+	}
+
+	if in.CsvExpiry <= 0 {
+		return nil, status.Error(codes.InvalidArgument,
+			"CSV expiry must be greater than zero")
+	}
+
+	depositID, err := s.assetDepositManager.NewDeposit(
+		ctx, assetID, in.Amount, uint32(in.CsvExpiry),
+	)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &looprpc.NewAssetDepositResponse{
+		DepositId: depositID,
+	}, nil
+}
+
+func (s *swapClientServer) ListAssetDeposits(ctx context.Context,
+	in *looprpc.ListAssetDepositsRequest) (
+	*looprpc.ListAssetDepositsResponse, error) {
+
+	if s.assetDepositManager == nil {
+		return nil, status.Error(codes.Unimplemented,
+			"Restart loop with --experimental")
+	}
+
+	if in.MinConfs < in.MaxConfs {
+		return nil, status.Error(codes.InvalidArgument,
+			"min_confs must be greater than or equal to max_confs")
+	}
+
+	deposits, err := s.assetDepositManager.ListDeposits(
+		ctx, in.MinConfs, in.MaxConfs,
+	)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	filteredDeposits := make([]*looprpc.AssetDeposit, 0, len(deposits))
+	for _, d := range deposits {
+		rpcDeposit := &looprpc.AssetDeposit{
+			CreatedAt:          d.CreatedAt.Unix(),
+			AssetId:            d.AssetID.String(),
+			Amount:             d.Amount,
+			DepositAddr:        d.Addr,
+			State:              d.State.String(),
+			CsvExpiry:          d.CsvExpiry,
+			ConfirmationHeight: d.ConfirmationHeight,
+			// TODO(bhandras): fill
+			AnchorOutpoint: "",
+		}
+
+		if d.ConfirmationHeight != 0 {
+			rpcDeposit.Expiry = d.ConfirmationHeight + d.CsvExpiry
+		}
+
+		filteredDeposits = append(filteredDeposits, rpcDeposit)
+	}
+
+	return &looprpc.ListAssetDepositsResponse{
+		FilteredDeposits: filteredDeposits,
+	}, nil
+}
+
+func (s *swapClientServer) CoSignAssetDepositHTLC(ctx context.Context,
+	in *looprpc.CoSignAssetDepositHTLCRequest) (
+	*looprpc.CoSignAssetDepositHTLCResponse, error) {
+
+	if s.assetDepositManager == nil {
+		return nil, status.Error(codes.Unimplemented,
+			"Restart loop with --experimental")
+	}
+
+	err := s.assetDepositManager.CoSignHTLC(ctx, in.DepositId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &looprpc.CoSignAssetDepositHTLCResponse{}, nil
+}
+
+func (s *swapClientServer) RevealAssetDepositKey(ctx context.Context,
+	in *looprpc.RevealAssetDepositKeyRequest) (
+	*looprpc.RevealAssetDepositKeyResponse, error) {
+
+	if s.assetDepositManager == nil {
+		return nil, status.Error(codes.Unimplemented,
+			"Restart loop with --experimental")
+	}
+
+	err := s.assetDepositManager.RevealDepositKeys(
+		ctx, []string{in.DepositId},
+	)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &looprpc.RevealAssetDepositKeyResponse{}, nil
 }
 
 type filterFunc func(deposits *deposit.Deposit) bool
