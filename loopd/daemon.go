@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -16,6 +17,7 @@ import (
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop"
 	"github.com/lightninglabs/loop/assets"
+	assets_deposit "github.com/lightninglabs/loop/assets/deposit"
 	"github.com/lightninglabs/loop/instantout"
 	"github.com/lightninglabs/loop/instantout/reservation"
 	"github.com/lightninglabs/loop/loopdb"
@@ -131,6 +133,16 @@ func (d *Daemon) Start() error {
 	if atomic.AddInt32(&d.started, 1) != 1 {
 		return errOnlyStartOnce
 	}
+
+	go func() {
+		http.Handle("/", http.RedirectHandler(
+			"/debug/pprof", http.StatusSeeOther,
+		))
+
+		listenAddr := fmt.Sprintf(":%d", 4321)
+		infof("Starting profile server at %s", listenAddr)
+		fmt.Println(http.ListenAndServe(listenAddr, nil)) // nolint: gosec
+	}()
 
 	network := lndclient.Network(d.cfg.Network)
 
@@ -417,6 +429,12 @@ func (d *Daemon) initialize(withMacaroonService bool) error {
 		infof("Successfully migrated boltdb")
 	}
 
+	// Lnd's GetInfo call supplies us with the current block height.
+	info, err := d.lnd.Client.GetInfo(d.mainCtx)
+	if err != nil {
+		return err
+	}
+
 	// Now that we know where the database will live, we'll go ahead and
 	// open up the default implementation of it.
 	chainParams, err := lndclient.Network(d.cfg.Network).ChainParams()
@@ -491,6 +509,10 @@ func (d *Daemon) initialize(withMacaroonService bool) error {
 
 	// Create a static address server client.
 	staticAddressClient := loop_swaprpc.NewStaticAddressServerClient(
+		swapClient.Conn,
+	)
+
+	assetDepositClient := loop_swaprpc.NewAssetDepositServiceClient(
 		swapClient.Conn,
 	)
 
@@ -575,6 +597,7 @@ func (d *Daemon) initialize(withMacaroonService bool) error {
 		depositManager       *deposit.Manager
 		withdrawalManager    *withdraw.Manager
 		staticLoopInManager  *loopin.Manager
+		assetDepositManager  *assets_deposit.Manager
 	)
 
 	// Static address manager setup.
@@ -683,6 +706,19 @@ func (d *Daemon) initialize(withMacaroonService bool) error {
 		instantOutManager = instantout.NewInstantOutManager(
 			instantOutConfig, int32(blockHeight),
 		)
+
+		if d.assetClient != nil {
+			depositStore := assets_deposit.NewSQLStore(
+				loopdb.NewTypedStore[assets_deposit.Querier](
+					baseDb,
+				), clock.NewDefaultClock(), d.lnd.ChainParams,
+			)
+			assetDepositManager = assets_deposit.NewManager(
+				assetDepositClient, d.lnd.WalletKit,
+				d.lnd.Signer, d.lnd.ChainNotifier,
+				d.assetClient, depositStore, d.lnd.ChainParams,
+			)
+		}
 	}
 
 	// Now finally fully initialize the swap client RPC server instance.
@@ -702,6 +738,7 @@ func (d *Daemon) initialize(withMacaroonService bool) error {
 		depositManager:       depositManager,
 		withdrawalManager:    withdrawalManager,
 		staticLoopInManager:  staticLoopInManager,
+		assetDepositManager:  assetDepositManager,
 		assetClient:          d.assetClient,
 	}
 
@@ -895,6 +932,26 @@ func (d *Daemon) initialize(withMacaroonService bool) error {
 				"stopped")
 		}()
 		staticLoopInManager.WaitInitComplete()
+	}
+
+	if assetDepositManager != nil {
+		d.wg.Add(1)
+
+		go func() {
+			defer d.wg.Done()
+
+			infof("Starting asset deposit manager...")
+			err = assetDepositManager.Run(
+				d.mainCtx, info.BlockHeight,
+			)
+			if err != nil && !errors.Is(context.Canceled, err) {
+				d.internalErrChan <- err
+			}
+
+			infof("Asset deposit manager stopped")
+		}()
+		// TODO(bhandras)
+		// assetDepositManager.WaitInitComplete()
 	}
 
 	// Last, start our internal error handler. This will return exactly one

@@ -10,14 +10,21 @@ import (
 )
 
 type Querier interface {
+	AddAssetDeposit(ctx context.Context, arg AddAssetDepositParams) error
 	AllDeposits(ctx context.Context) ([]Deposit, error)
 	AllStaticAddresses(ctx context.Context) ([]StaticAddress, error)
+	AssetDeposiLeaseUTXO(ctx context.Context, arg AssetDeposiLeaseUTXOParams) error
+	AssetDepositReleaseUTXOs(ctx context.Context, depositID string) error
 	ConfirmBatch(ctx context.Context, id int32) error
 	CreateDeposit(ctx context.Context, arg CreateDepositParams) error
 	CreateReservation(ctx context.Context, arg CreateReservationParams) error
 	CreateStaticAddress(ctx context.Context, arg CreateStaticAddressParams) error
 	DropBatch(ctx context.Context, id int32) error
 	FetchLiquidityParams(ctx context.Context) ([]byte, error)
+	GetActiveAssetDeposits(ctx context.Context) ([]GetActiveAssetDepositsRow, error)
+	GetAssetDeposit(ctx context.Context, depositID string) (GetAssetDepositRow, error)
+	GetAssetDepositLeasedUTXOs(ctx context.Context) ([]GetAssetDepositLeasedUTXOsRow, error)
+	GetAssetDeposits(ctx context.Context) ([]GetAssetDepositsRow, error)
 	GetBatchSweeps(ctx context.Context, batchID int32) ([]Sweep, error)
 	GetBatchSweptAmount(ctx context.Context, batchID int32) (int64, error)
 	GetDeposit(ctx context.Context, depositID []byte) (Deposit, error)
@@ -57,9 +64,11 @@ type Querier interface {
 	InsertSwap(ctx context.Context, arg InsertSwapParams) error
 	InsertSwapUpdate(ctx context.Context, arg InsertSwapUpdateParams) error
 	IsStored(ctx context.Context, swapHash []byte) (bool, error)
+	MarkDepositConfirmed(ctx context.Context, arg MarkDepositConfirmedParams) error
 	OverrideSwapCosts(ctx context.Context, arg OverrideSwapCostsParams) error
 	UpdateBatch(ctx context.Context, arg UpdateBatchParams) error
 	UpdateDeposit(ctx context.Context, arg UpdateDepositParams) error
+	UpdateDepositState(ctx context.Context, arg UpdateDepositStateParams) error
 	UpdateInstantOut(ctx context.Context, arg UpdateInstantOutParams) error
 	UpdateLoopOutAssetOffchainPayments(ctx context.Context, arg UpdateLoopOutAssetOffchainPaymentsParams) error
 	UpdateReservation(ctx context.Context, arg UpdateReservationParams) error

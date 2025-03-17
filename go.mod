@@ -23,7 +23,7 @@ require (
 	github.com/lightninglabs/loop/looprpc v1.0.0
 	github.com/lightninglabs/loop/swapserverrpc v1.0.13
 	github.com/lightninglabs/taproot-assets v0.5.2-0.20250502070549-52257227c8f8
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.1
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.3
 	github.com/lightningnetwork/lnd v0.19.0-beta.rc2.0.20250423092132-a35ace7371af
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
@@ -216,5 +216,9 @@ replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate
 replace github.com/lightninglabs/loop/swapserverrpc => ./swapserverrpc
 
 replace github.com/lightninglabs/loop/looprpc => ./looprpc
+
+replace github.com/lightninglabs/taproot-assets => /Users/bhandras/work/taproot-assets
+
+replace github.com/lightninglabs/taproot-assets/taprpc => /Users/bhandras/work/taproot-assets/taprpc
 
 go 1.23.6

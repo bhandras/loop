@@ -455,10 +455,6 @@ github.com/lightninglabs/neutrino/cache v1.1.2 h1:C9DY/DAPaPxbFC+xNNEI/z1SJY9GS3
 github.com/lightninglabs/neutrino/cache v1.1.2/go.mod h1:XJNcgdOw1LQnanGjw8Vj44CvguYA25IMKjWFZczwZuo=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display h1:w7FM5LH9Z6CpKxl13mS48idsu6F+cEZf0lkyiV+Dq9g=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display/go.mod h1:qYOHts0dSfpeUzUFpOMr/WGzszTmLH+DiWniOlNbLDw=
-github.com/lightninglabs/taproot-assets v0.5.2-0.20250502070549-52257227c8f8 h1:kYAHGZTfIXgH9wQHml5B916GlS0pe6tcNsroqzabSxI=
-github.com/lightninglabs/taproot-assets v0.5.2-0.20250502070549-52257227c8f8/go.mod h1:OdeFcj2bnJf6aaYjBB5c8KdNI3aDaEMQpsSu2EqvMlw=
-github.com/lightninglabs/taproot-assets/taprpc v1.0.1 h1:aSlCWdJkagx9xa8DqK/pzHYCtY7PokU6wASse3dWayc=
-github.com/lightninglabs/taproot-assets/taprpc v1.0.1/go.mod h1:Ccq0t2GsXzOtC8qF0U1ux/yTF5HcBbVrhCb0tb/jObM=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb h1:yfM05S8DXKhuCBp5qSMZdtSwvJ+GFzl94KbXMNB1JDY=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb/go.mod h1:c0kvRShutpj3l6B9WtTsNTBUtjSmjZXbJd9ZBRQOSKI=
 github.com/lightningnetwork/lnd v0.19.0-beta.rc2.0.20250423092132-a35ace7371af h1:+t8N7kmI7YVu7Hzv8pPiMVCTjnSRi/qOxbAkXa5rn+0=
