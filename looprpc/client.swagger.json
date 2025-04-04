@@ -680,6 +680,43 @@
       "description": "- `unknown`: Unknown address type\n- `p2tr`: Pay to taproot pubkey (`TAPROOT_PUBKEY` = 1)",
       "title": "`AddressType` has to be one of:"
     },
+    "looprpcAssetDeposit": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "int64"
+        },
+        "asset_id": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "deposit_addr": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "csv_expiry": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "confirmation_height": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "expiry": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "anchor_outpoint": {
+          "type": "string"
+        }
+      }
+    },
     "looprpcAssetLoopOutInfo": {
       "type": "object",
       "properties": {
@@ -1299,6 +1336,18 @@
       ],
       "default": "UNKNOWN"
     },
+    "looprpcListAssetDepositsResponse": {
+      "type": "object",
+      "properties": {
+        "filtered_deposits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/looprpcAssetDeposit"
+          },
+          "description": "A list of all deposits that match the filtered state."
+        }
+      }
+    },
     "looprpcListInstantOutsResponse": {
       "type": "object",
       "properties": {
@@ -1593,6 +1642,14 @@
           "type": "string",
           "format": "int64",
           "description": "The sum of all succeeded swap amounts."
+        }
+      }
+    },
+    "looprpcNewAssetDepositResponse": {
+      "type": "object",
+      "properties": {
+        "deposit_id": {
+          "type": "string"
         }
       }
     },
