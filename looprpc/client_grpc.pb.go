@@ -130,6 +130,8 @@ type SwapClientClient interface {
 	// loop:`static`
 	// StaticAddressLoopIn initiates a static address loop-in swap.
 	StaticAddressLoopIn(ctx context.Context, in *StaticAddressLoopInRequest, opts ...grpc.CallOption) (*StaticAddressLoopInResponse, error)
+	NewAssetDeposit(ctx context.Context, in *NewAssetDepositRequest, opts ...grpc.CallOption) (*NewAssetDepositResponse, error)
+	ListAssetDeposits(ctx context.Context, in *ListAssetDepositsRequest, opts ...grpc.CallOption) (*ListAssetDepositsResponse, error)
 }
 
 type swapClientClient struct {
@@ -424,6 +426,24 @@ func (c *swapClientClient) StaticAddressLoopIn(ctx context.Context, in *StaticAd
 	return out, nil
 }
 
+func (c *swapClientClient) NewAssetDeposit(ctx context.Context, in *NewAssetDepositRequest, opts ...grpc.CallOption) (*NewAssetDepositResponse, error) {
+	out := new(NewAssetDepositResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.SwapClient/NewAssetDeposit", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *swapClientClient) ListAssetDeposits(ctx context.Context, in *ListAssetDepositsRequest, opts ...grpc.CallOption) (*ListAssetDepositsResponse, error) {
+	out := new(ListAssetDepositsResponse)
+	err := c.cc.Invoke(ctx, "/looprpc.SwapClient/ListAssetDeposits", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SwapClientServer is the server API for SwapClient service.
 // All implementations must embed UnimplementedSwapClientServer
 // for forward compatibility
@@ -540,6 +560,8 @@ type SwapClientServer interface {
 	// loop:`static`
 	// StaticAddressLoopIn initiates a static address loop-in swap.
 	StaticAddressLoopIn(context.Context, *StaticAddressLoopInRequest) (*StaticAddressLoopInResponse, error)
+	NewAssetDeposit(context.Context, *NewAssetDepositRequest) (*NewAssetDepositResponse, error)
+	ListAssetDeposits(context.Context, *ListAssetDepositsRequest) (*ListAssetDepositsResponse, error)
 	mustEmbedUnimplementedSwapClientServer()
 }
 
@@ -633,6 +655,12 @@ func (UnimplementedSwapClientServer) GetStaticAddressSummary(context.Context, *S
 }
 func (UnimplementedSwapClientServer) StaticAddressLoopIn(context.Context, *StaticAddressLoopInRequest) (*StaticAddressLoopInResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StaticAddressLoopIn not implemented")
+}
+func (UnimplementedSwapClientServer) NewAssetDeposit(context.Context, *NewAssetDepositRequest) (*NewAssetDepositResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewAssetDeposit not implemented")
+}
+func (UnimplementedSwapClientServer) ListAssetDeposits(context.Context, *ListAssetDepositsRequest) (*ListAssetDepositsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAssetDeposits not implemented")
 }
 func (UnimplementedSwapClientServer) mustEmbedUnimplementedSwapClientServer() {}
 
@@ -1172,6 +1200,42 @@ func _SwapClient_StaticAddressLoopIn_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SwapClient_NewAssetDeposit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewAssetDepositRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SwapClientServer).NewAssetDeposit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.SwapClient/NewAssetDeposit",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SwapClientServer).NewAssetDeposit(ctx, req.(*NewAssetDepositRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SwapClient_ListAssetDeposits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAssetDepositsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SwapClientServer).ListAssetDeposits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/looprpc.SwapClient/ListAssetDeposits",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SwapClientServer).ListAssetDeposits(ctx, req.(*ListAssetDepositsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SwapClient_ServiceDesc is the grpc.ServiceDesc for SwapClient service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1290,6 +1354,14 @@ var SwapClient_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StaticAddressLoopIn",
 			Handler:    _SwapClient_StaticAddressLoopIn_Handler,
+		},
+		{
+			MethodName: "NewAssetDeposit",
+			Handler:    _SwapClient_NewAssetDeposit_Handler,
+		},
+		{
+			MethodName: "ListAssetDeposits",
+			Handler:    _SwapClient_ListAssetDeposits_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
