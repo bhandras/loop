@@ -194,6 +194,12 @@ service SwapClient {
     */
     rpc StaticAddressLoopIn (StaticAddressLoopInRequest)
         returns (StaticAddressLoopInResponse);
+
+    rpc NewAssetDeposit (NewAssetDepositRequest)
+        returns (NewAssetDepositResponse);
+
+    rpc ListAssetDeposits (ListAssetDepositsRequest)
+        returns (ListAssetDepositsResponse);
 }
 
 message LoopOutRequest {
@@ -2153,4 +2159,51 @@ message AssetLoopOutInfo {
     The total asset offchain cost of the swap.
     */
     uint64 asset_cost_offchain = 3;
+}
+
+message NewAssetDepositRequest {
+    string asset_id = 1;
+
+    uint64 amount = 2;
+
+    int32 csv_expiry = 3;
+}
+
+message NewAssetDepositResponse {
+    string deposit_id = 1;
+}
+
+message ListAssetDepositsRequest {
+    // The number of minimum confirmations a deposit anchor must have to be
+    // listed.
+    uint32 min_confs = 1;
+
+    // The number of maximum confirmations a deposit anchor may have to be
+    // listed. A zero value indicates that there is no maximum.
+    uint32 max_confs = 2;
+}
+
+message ListAssetDepositsResponse {
+    // A list of all deposits that match the filtered state.
+    repeated AssetDeposit filtered_deposits = 1;
+}
+
+message AssetDeposit {
+    int64 created_at = 1;
+
+    string asset_id = 2;
+
+    uint64 amount = 3;
+
+    string deposit_addr = 4;
+
+    string state = 5;
+
+    uint32 csv_expiry = 6;
+
+    uint32 confirmation_height = 7;
+
+    uint32 expiry = 8;
+
+    string anchor_outpoint = 9;
 }
